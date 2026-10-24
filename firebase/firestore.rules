@@ -1,0 +1,11 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Seluruh baca/tulis dilakukan server Laravel memakai Admin SDK.
+    // Browser tidak boleh mengakses Firestore secara langsung.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
