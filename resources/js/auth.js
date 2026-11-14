@@ -73,7 +73,7 @@ function friendlyError(error) {
 }
 
 function configMissingMessage() {
-    return 'Konfigurasi Firebase belum diisi. Isi variabel VITE_FIREBASE_* di file .env, lalu jalankan ulang npm run dev (atau npm run build).';
+    return 'Konfigurasi Firebase belum diisi. Isi variabel VITE_FIREBASE_* di environment (Vercel / file .env lalu npm run build).';
 }
 
 export function initAuthForms() {

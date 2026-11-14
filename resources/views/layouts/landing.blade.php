@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Beranda') &middot; Laporku</title>
     <meta name="description" content="Laporku — sistem pelaporan lingkungan perumahan. Laporkan masalah, pantau sebarannya di peta real-time, dan tindak lanjuti bersama pengurus.">
+    @include('partials.firebase-config')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>

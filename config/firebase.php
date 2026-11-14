@@ -63,6 +63,26 @@ return [
             ],
 
             /*
+             * ------------------------------------------------------------------
+             * Firebase Web SDK (konfigurasi proyek untuk browser)
+             * ------------------------------------------------------------------
+             *
+             * Dibaca dari environment (nama variabel sama dengan VITE_FIREBASE_*
+             * agar tetap kompatibel dengan build Vite lokal) lalu disuntikkan ke
+             * halaman lewat partial firebase-config, sehingga tidak perlu
+             * di-inline saat build aset (aman untuk deploy Vercel/Docker).
+             */
+
+            'web' => [
+                'api_key' => env('VITE_FIREBASE_API_KEY'),
+                'auth_domain' => env('VITE_FIREBASE_AUTH_DOMAIN'),
+                'project_id' => env('VITE_FIREBASE_PROJECT_ID'),
+                'storage_bucket' => env('VITE_FIREBASE_STORAGE_BUCKET'),
+                'messaging_sender_id' => env('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+                'app_id' => env('VITE_FIREBASE_APP_ID'),
+            ],
+
+            /*
              * ------------------------------------------------------------------------
              * Firestore Component
              * ------------------------------------------------------------------------

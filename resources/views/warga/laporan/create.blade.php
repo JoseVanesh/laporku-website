@@ -50,7 +50,7 @@
                     <input type="file" id="media" name="media[]" multiple required
                            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
                            class="mt-1.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-brand-50 file:px-4 file:py-2.5 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100">
-                    <p class="mt-2 text-xs text-slate-500">Maksimal 6 berkas, masing-masing maksimal 50 MB. Format: JPG, PNG, WEBP, MP4, WEBM, MOV.</p>
+                    <p class="mt-2 text-xs text-slate-500">Maksimal 5 berkas, masing-masing maksimal 10 MBB. Format: JPG, PNG, WEBP, MP4, WEBM, MOV.</p>
                     <ul id="media-list" class="mt-2 hidden space-y-1 text-xs text-slate-600"></ul>
                 </div>
 

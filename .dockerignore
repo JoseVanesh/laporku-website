@@ -1,0 +1,17 @@
+.git
+.env
+.env.*
+!.env.example
+database/database.sqlite
+node_modules
+tests
+vendor
+public/build
+storage/app/public/laporan
+storage/app/firebase-service-account.json
+storage/framework
+storage/logs
+.phpunit.result.cache
+.phpunit.cache
+Dockerfile
+vercel.json

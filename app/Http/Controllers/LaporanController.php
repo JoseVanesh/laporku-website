@@ -64,8 +64,8 @@ class LaporanController extends Controller
             'lokasi' => 'nullable|string|max:200',
             'lat' => 'nullable|numeric|between:-90,90',
             'lng' => 'nullable|numeric|between:-180,180',
-            'media' => 'required|array|min:1|max:6',
-            'media.*' => 'file|mimes:jpg,jpeg,png,webp,mp4,webm,mov|max:51200',
+            'media' => 'required|array|min:1|max:5',
+            'media.*' => 'file|mimes:jpg,jpeg,png,webp,mp4,webm,mov|max:10240',
         ], [
             'judul.required' => 'Judul laporan wajib diisi.',
             'judul.min' => 'Judul minimal 5 karakter.',
@@ -74,7 +74,7 @@ class LaporanController extends Controller
             'deskripsi.min' => 'Uraian minimal 10 karakter.',
             'media.required' => 'Lampirkan minimal satu foto atau video.',
             'media.min' => 'Lampirkan minimal satu foto atau video.',
-            'media.*.max' => 'Ukuran berkas maksimal 50 MB.',
+            'media.*.max' => 'Ukuran berkas maksimal 10 MB.',
             'media.*.mimes' => 'Format berkas harus jpg, png, webp, mp4, webm, atau mov.',
         ]);
 
