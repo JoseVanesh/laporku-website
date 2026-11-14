@@ -21,7 +21,7 @@ class StorageUploader
         $path = $folder.'/'.now()->format('Ymd').'/'.Str::random(20).'.'.$extension;
         $mime = (string) ($file->getClientMimeType() ?: 'application/octet-stream');
 
-        Storage::disk($this->disk())->put($path, $file->get());
+        $this->put($path, (string) $file->get(), $mime);
 
         return [
             'path' => $path,
@@ -31,9 +31,14 @@ class StorageUploader
         ];
     }
 
-    public function delete(string $path): void
+    public function put(string $path, string $contents, string $mime = 'application/octet-stream'): void
     {
-        Storage::disk($this->disk())->delete($path);
+        Storage::disk($this->disk())->put($this->storageId($path, $mime), $contents);
+    }
+
+    public function delete(string $path, string $mime = 'application/octet-stream'): void
+    {
+        Storage::disk($this->disk())->delete($this->storageId($path, $mime));
     }
 
     /**
@@ -53,14 +58,42 @@ class StorageUploader
         }
 
         $cloud = (string) config('filesystems.disks.cloudinary.cloud_name', '');
+        $resourceType = $this->resourceType($mime);
 
-        $resourceType = match (true) {
+        return sprintf(
+            'https://res.cloudinary.com/%s/%s/upload/%s',
+            $cloud,
+            $resourceType,
+            $this->storageId($path, $mime),
+        );
+    }
+
+    /**
+     * ID penyimpanan di disk aktif.
+     *
+     * Cloudinary: image/video disimpan tanpa ekstensi karena ia menentukan
+     * format dari konten. Jika ekstensi ikut disimpan, URL pengiriman menjadi
+     * dobel (file.png → file.png.png) dan menghasilkan 404.
+     * Raw tetap menyimpan ekstensi agar formatnya jelas.
+     */
+    private function storageId(string $path, string $mime): string
+    {
+        $path = ltrim($path, '/');
+
+        if ($this->disk() !== 'cloudinary' || $this->resourceType($mime) === 'raw') {
+            return $path;
+        }
+
+        return preg_replace('/\.[^.\/]+$/', '', $path) ?? $path;
+    }
+
+    private function resourceType(string $mime): string
+    {
+        return match (true) {
             str_starts_with($mime, 'image/') => 'image',
             str_starts_with($mime, 'video/') => 'video',
             default => 'raw',
         };
-
-        return sprintf('https://res.cloudinary.com/%s/%s/upload/%s', $cloud, $resourceType, $path);
     }
 
     private function disk(): string

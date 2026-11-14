@@ -7,7 +7,6 @@ namespace App\Console\Commands;
 use App\Services\Media\StorageUploader;
 use Google\Cloud\Firestore\FirestoreClient;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 class MigrateMediaToCloudinary extends Command
 {
@@ -87,7 +86,7 @@ class MigrateMediaToCloudinary extends Command
                     continue;
                 }
 
-                Storage::disk('cloudinary')->put($path, (string) file_get_contents($local));
+                $uploader->put($path, (string) file_get_contents($local), $mime);
                 $media[$i]['url'] = $uploader->publicUrl($path, $mime);
                 $changed = true;
                 $uploaded++;

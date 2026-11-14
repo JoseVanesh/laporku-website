@@ -53,6 +53,11 @@ return [
             'api_key' => env('CLOUDINARY_API_KEY'),
             'api_secret' => env('CLOUDINARY_API_SECRET'),
             'throw' => true,
+            // Pakai path persis sebagai public_id (adapter default use_filename=true
+            // membuat ekstensi ganda: file.png → file.png.png).
+            'options' => [
+                'use_filename' => false,
+            ],
         ],
 
         's3' => [
