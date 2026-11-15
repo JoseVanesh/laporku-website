@@ -6,13 +6,12 @@ namespace App\Http\Controllers;
 
 use App\Services\Firestore\UserStore;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Kreait\Laravel\Firebase\Facades\Firebase;
 use Throwable;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly UserStore $users) {}
-
     public function showLogin(Request $request)
     {
         if ($request->session()->has('firebase.uid')) {
@@ -35,7 +34,7 @@ class AuthController extends Controller
      * Menerima ID token dari Firebase Auth di browser, memverifikasinya,
      * lalu membuat sesi Laravel.
      */
-    public function login(Request $request)
+    public function login(Request $request, UserStore $users)
     {
         $validated = $request->validate([
             'idToken' => 'required|string',
@@ -52,25 +51,36 @@ class AuthController extends Controller
         $uid = (string) $claims->claims()->get('sub');
         $email = (string) ($claims->claims()->get('email') ?? '');
 
-        $user = $this->users->find($uid);
+        try {
+            $user = $users->find($uid);
 
-        if ($user === null) {
-            $user = $this->users->create($uid, [
-                'nama' => (string) ($claims->claims()->get('name') ?: explode('@', $email)[0]),
-                'email' => $email,
-                'telepon' => '',
-                'role' => 'warga',
-                'blok' => '',
-                'rumah' => '',
+            if ($user === null) {
+                $user = $users->create($uid, [
+                    'nama' => (string) ($claims->claims()->get('name') ?: explode('@', $email)[0]),
+                    'email' => $email,
+                    'telepon' => '',
+                    'role' => 'warga',
+                    'blok' => '',
+                    'rumah' => '',
+                ]);
+            }
+
+            $this->startSession($user);
+        } catch (Throwable $e) {
+            Log::error('Gagal memproses login: operasi Firestore gagal', [
+                'uid' => $uid,
+                'exception' => $e,
             ]);
-        }
 
-        $this->startSession($user);
+            return response()->json([
+                'message' => 'Server sedang bermasalah saat menghubungi data pengguna. Silakan coba lagi.',
+            ], 500);
+        }
 
         return response()->json(['redirect' => $this->homeFor((string) $user['role'])]);
     }
 
-    public function register(Request $request)
+    public function register(Request $request, UserStore $users)
     {
         $validated = $request->validate([
             'idToken' => 'required|string',
@@ -91,20 +101,33 @@ class AuthController extends Controller
         $uid = (string) $claims->claims()->get('sub');
         $email = (string) ($claims->claims()->get('email') ?? '');
 
-        $existing = $this->users->find($uid);
+        try {
+            $existing = $users->find($uid);
 
-        $user = $existing ?? $this->users->create($uid, []);
+            $user = $existing ?? $users->create($uid, []);
 
-        $this->users->update($uid, [
-            'nama' => $validated['nama'],
-            'email' => $email,
-            'telepon' => $validated['telepon'],
-            'blok' => $validated['blok'],
-            'rumah' => $validated['rumah'] ?? '',
-            'role' => $existing['role'] ?? 'warga',
-        ]);
+            $users->update($uid, [
+                'nama' => $validated['nama'],
+                'email' => $email,
+                'telepon' => $validated['telepon'],
+                'blok' => $validated['blok'],
+                'rumah' => $validated['rumah'] ?? '',
+                'role' => $existing['role'] ?? 'warga',
+            ]);
 
-        $this->startSession($this->users->find($uid) ?? $user);
+            $user = $users->find($uid) ?? $user;
+
+            $this->startSession($user);
+        } catch (Throwable $e) {
+            Log::error('Gagal memproses pendaftaran: operasi Firestore gagal', [
+                'uid' => $uid,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'message' => 'Server sedang bermasalah saat menyimpan data pendaftaran. Silakan coba lagi.',
+            ], 500);
+        }
 
         return response()->json(['redirect' => $this->homeFor((string) ($user['role'] ?? 'warga'))]);
     }
