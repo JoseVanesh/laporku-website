@@ -238,30 +238,42 @@ export function initLocationPicker(el) {
         setPoint(parseFloat(latInput.value), parseFloat(lngInput.value), false);
     }
 
-    gpsButton?.addEventListener('click', () => {
+    function detectLocation() {
         if (!navigator.geolocation) {
             alert('Perangkat ini tidak mendukung deteksi lokasi.');
             return;
         }
 
-        gpsButton.disabled = true;
-        const original = gpsButton.textContent;
-        gpsButton.textContent = 'Mencari lokasi...';
+        gpsButton?.setAttribute('disabled', 'true');
+        const original = gpsButton?.textContent ?? 'Lokasi Saya';
+        if (gpsButton) {
+            gpsButton.textContent = 'Mencari lokasi...';
+        }
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 setPoint(position.coords.latitude, position.coords.longitude);
-                gpsButton.disabled = false;
-                gpsButton.textContent = original;
+                gpsButton?.removeAttribute('disabled');
+                if (gpsButton) {
+                    gpsButton.textContent = original;
+                }
             },
             () => {
                 alert('Lokasi tidak dapat diambil. Pastikan izin lokasi diaktifkan.');
-                gpsButton.disabled = false;
-                gpsButton.textContent = original;
+                gpsButton?.removeAttribute('disabled');
+                if (gpsButton) {
+                    gpsButton.textContent = original;
+                }
             },
             { enableHighAccuracy: true, timeout: 10000 },
         );
-    });
+    }
+
+    gpsButton?.addEventListener('click', detectLocation);
+
+    if (latInput && lngInput && !latInput.value && !lngInput.value) {
+        detectLocation();
+    }
 
     clearButton?.addEventListener('click', () => {
         if (marker) {
