@@ -24,6 +24,8 @@ class DashboardController extends Controller
             ? ($role === 'rt' ? ['blok' => (string) session('firebase.blok', '')] : [])
             : ['uid_penulis' => (string) session('firebase.uid')];
 
+        $blokStats = $isStaff ? $this->reports->blokSummary($scopeFilters) : ['bloks' => [], 'total' => 0];
+
         return view('dashboard.index', [
             'role' => $role,
             'isStaff' => $isStaff,
@@ -32,6 +34,7 @@ class DashboardController extends Controller
             'pengumuman' => $this->announcements->latest(3),
             'statusLabels' => LaporanController::STATUS_LABELS,
             'blokKosong' => $role === 'rt' && (string) session('firebase.blok', '') === '',
+            'blokStats' => $blokStats,
             'map' => [
                 'center' => config('laporku.map.center'),
                 'zoom' => config('laporku.map.zoom'),

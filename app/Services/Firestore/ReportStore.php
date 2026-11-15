@@ -157,6 +157,55 @@ class ReportStore
     }
 
     /**
+     * Jumlah laporan per blok untuk grafik pantauan RW dan RT.
+     *
+     * @param  array<string, string|null>  $filters
+     * @return array{bloks: array<int, array{blok: string, total: int}>, total: int}
+     */
+    public function blokSummary(array $filters = [], int $limit = 500): array
+    {
+        $query = $this->collection();
+
+        foreach (['uid_penulis', 'status', 'kategori', 'blok'] as $field) {
+            if (! empty($filters[$field])) {
+                $query = $query->where($field, '=', $filters[$field]);
+            }
+        }
+
+        $documents = $query
+            ->orderBy('created_at', Query::DIR_DESCENDING)
+            ->limit($limit)
+            ->documents();
+
+        $totals = [];
+
+        foreach ($documents as $snapshot) {
+            if (! $snapshot->exists()) {
+                continue;
+            }
+
+            $data = $snapshot->data();
+            $blok = (string) ($data['blok'] ?? '');
+
+            if ($blok === '') {
+                continue;
+            }
+
+            $totals[$blok] = ($totals[$blok] ?? 0) + 1;
+        }
+
+        $bloks = [];
+
+        foreach ($totals as $blok => $total) {
+            $bloks[] = ['blok' => (string) $blok, 'total' => $total];
+        }
+
+        usort($bloks, static fn (array $a, array $b): int => $b['total'] <=> $a['total']);
+
+        return ['bloks' => $bloks, 'total' => array_sum($totals)];
+    }
+
+    /**
      * @param  array<string, mixed>  $comment
      */
     public function addComment(string $reportId, array $comment): void

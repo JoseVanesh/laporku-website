@@ -124,6 +124,37 @@
         </div>
     </div>
 
+    @if ($isStaff)
+        <div class="mt-6 card overflow-hidden">
+            <div class="flex items-center justify-between border-b border-brand-50 px-5 py-4">
+                <div>
+                    <h3 class="font-semibold text-slate-900">Laporan per Blok</h3>
+                    <p class="mt-1 text-xs text-slate-500">Jumlah laporan kejadian per blok untuk pantauan.</p>
+                </div>
+            </div>
+            <div class="px-5 py-5">
+                @if (empty($blokStats['bloks']))
+                    <p class="text-sm text-slate-500">Belum ada laporan yang tercatat per blok.</p>
+                @else
+                    @php($blokMax = (int) ($blokStats['bloks'][0]['total'] ?? 0))
+                    <div class="space-y-3">
+                        @foreach ($blokStats['bloks'] as $blokItem)
+                            <div>
+                                <div class="flex items-center justify-between gap-2 text-sm">
+                                    <span class="font-medium text-slate-700">Blok {{ $blokItem['blok'] }}</span>
+                                    <span class="text-slate-500">{{ $blokItem['total'] }} laporan</span>
+                                </div>
+                                <div class="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                                    <div class="h-2.5 rounded-full bg-brand-500" style="width: {{ $blokMax > 0 ? min(100, (($blokItem['total'] / $blokMax) * 100)) : 0 }}%"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     @if (count($pengumuman) > 0)
         <div class="mt-6 card overflow-hidden">
             <div class="flex items-center justify-between border-b border-brand-50 px-5 py-4">
