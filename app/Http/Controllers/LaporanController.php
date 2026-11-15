@@ -96,10 +96,12 @@ class LaporanController extends Controller
             $size = (int) ($item['size'] ?? 0);
             $tipe = (string) ($item['tipe'] ?? '');
 
-            $host = parse_url($url, PHP_URL_HOST);
-            $expectedHost = $cloudName !== '' ? $cloudName.'.cloudinary.com' : 'res.cloudinary.com';
+            $host = (string) parse_url($url, PHP_URL_HOST);
+            $pathUrl = (string) parse_url($url, PHP_URL_PATH);
+            $validHost = $host === 'res.cloudinary.com';
+            $validCloud = $cloudName === '' || str_starts_with($pathUrl, '/'.$cloudName.'/');
 
-            if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL) || $host !== $expectedHost) {
+            if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL) || ! $validHost || ! $validCloud) {
                 return back()->withErrors(['media_items' => 'Lampiran harus berasal dari penyimpanan yang sah.'])->withInput();
             }
 
