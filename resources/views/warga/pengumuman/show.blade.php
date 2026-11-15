@@ -14,9 +14,9 @@
 
             <div class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-500">
                 <span>Oleh {{ $item['penulis_nama'] ?? 'Pengurus' }}</span>
-                <span>Diterbitkan {{ \Illuminate\Support\Carbon::parse($item['created_at'])->locale('id')->translatedFormat('d MMMM yyyy, HH:mm') }}</span>
+                <span>Diterbitkan {{ \Illuminate\Support\Carbon::parse($item['created_at'])->locale('id')->translatedFormat('d F Y, H:i') }}</span>
                 @if (! empty($item['updated_at']))
-                    <span>Diperbarui {{ \Illuminate\Support\Carbon::parse($item['updated_at'])->locale('id')->translatedFormat('d MMMM yyyy, HH:mm') }}</span>
+                    <span>Diperbarui {{ \Illuminate\Support\Carbon::parse($item['updated_at'])->locale('id')->translatedFormat('d F Y, H:i') }}</span>
                 @endif
             </div>
 

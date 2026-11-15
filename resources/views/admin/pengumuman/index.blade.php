@@ -36,7 +36,7 @@
                             <p class="mt-0.5 line-clamp-2 text-sm text-slate-500">{{ $item['isi'] }}</p>
                             <p class="mt-1 text-xs text-slate-400">
                                 Oleh {{ $item['penulis_nama'] ?? 'Pengurus' }} &middot; Diterbitkan
-                                @include('partials.tanggal', ['waktu' => $item['created_at'], 'format' => 'd MMM yyyy'])
+                                @include('partials.tanggal', ['waktu' => $item['created_at'], 'format' => 'd M Y'])
                             </p>
                         </div>
                         <div class="flex shrink-0 gap-2">

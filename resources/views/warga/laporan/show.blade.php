@@ -20,7 +20,7 @@
                     <h1 class="mt-3 text-2xl font-semibold text-slate-900">{{ $laporan['judul'] }}</h1>
 
                     <div class="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-500">
-                        <span>Dikirim {{ \Illuminate\Support\Carbon::parse($laporan['created_at'])->locale('id')->translatedFormat('d MMMM yyyy, HH:mm') }}</span>
+                        <span>Dikirim {{ \Illuminate\Support\Carbon::parse($laporan['created_at'])->locale('id')->translatedFormat('d F Y, H:i') }}</span>
                         @if (! empty($laporan['lokasi']))
                             <span>📍 {{ $laporan['lokasi'] }}</span>
                         @endif

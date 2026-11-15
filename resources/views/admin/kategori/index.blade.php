@@ -24,7 +24,7 @@
                     <li class="flex items-center justify-between gap-4 px-5 py-4">
                         <div>
                             <p class="font-medium text-slate-900">{{ $item['nama'] }}</p>
-                            <p class="text-xs text-slate-500">Dibuat @include('partials.tanggal', ['waktu' => $item['created_at'], 'format' => 'd MMM yyyy'])</p>
+                            <p class="text-xs text-slate-500">Dibuat @include('partials.tanggal', ['waktu' => $item['created_at'], 'format' => 'd M Y'])</p>
                         </div>
                         <form method="POST" action="{{ route('admin.kategori.destroy', $item['id']) }}"
                               onsubmit="return confirm('Hapus jenis pelaporan &quot;{{ $item['nama'] }}&quot;? Laporan lama tetap menyimpan nama kategori ini.')">
