@@ -11,7 +11,7 @@ RUN npm run build
 FROM dunglas/frankenphp:1-php8.4-bookworm AS base
 
 RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
-    && install-php-extensions intl zip pdo_sqlite
+    && install-php-extensions intl zip pdo_sqlite bcmath
 
 WORKDIR /app
 
