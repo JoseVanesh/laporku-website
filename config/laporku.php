@@ -33,4 +33,9 @@ return [
         'zoom' => (int) env('LAPORKU_MAP_ZOOM', 12),
     ],
 
+    'cloudinary' => [
+        'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+        'upload_preset' => env('CLOUDINARY_UPLOAD_PRESET'),
+    ],
+
 ];

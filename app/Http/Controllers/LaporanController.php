@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use App\Services\Firestore\CategoryStore;
 use App\Services\Firestore\ReportStore;
-use App\Services\Media\StorageUploader;
 use Illuminate\Http\Request;
 
 class LaporanController extends Controller
@@ -23,7 +22,6 @@ class LaporanController extends Controller
     public function __construct(
         private readonly ReportStore $reports,
         private readonly CategoryStore $categories,
-        private readonly StorageUploader $uploader,
     ) {}
 
     public function index(Request $request)
@@ -64,34 +62,66 @@ class LaporanController extends Controller
             'lokasi' => 'nullable|string|max:200',
             'lat' => 'nullable|numeric|between:-90,90',
             'lng' => 'nullable|numeric|between:-180,180',
-            'media' => 'required|array|min:1|max:5',
-            'media.*' => 'file|mimes:jpg,jpeg,png,webp,mp4,webm,mov|max:10240',
+            'media_items' => 'required|array|min:1|max:5',
+            'media_items.*' => 'required|string',
         ], [
             'judul.required' => 'Judul laporan wajib diisi.',
             'judul.min' => 'Judul minimal 5 karakter.',
             'kategori.required' => 'Pilih jenis pelaporan.',
             'deskripsi.required' => 'Uraian kejadian wajib diisi.',
             'deskripsi.min' => 'Uraian minimal 10 karakter.',
-            'media.required' => 'Lampirkan minimal satu foto atau video.',
-            'media.min' => 'Lampirkan minimal satu foto atau video.',
-            'media.*.max' => 'Ukuran berkas maksimal 10 MB.',
-            'media.*.mimes' => 'Format berkas harus jpg, png, webp, mp4, webm, atau mov.',
+            'media_items.required' => 'Lampirkan minimal satu foto atau video.',
+            'media_items.min' => 'Lampirkan minimal satu foto atau video.',
+            'media_items.max' => 'Maksimal 5 berkas.',
         ]);
 
         if (! in_array($validated['kategori'], $this->categories->names(), true)) {
             return back()->withErrors(['kategori' => 'Jenis pelaporan tidak ditemukan.'])->withInput();
         }
 
+        $cloudName = (string) config('laporku.cloudinary.cloud_name');
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
         $media = [];
 
-        foreach ($request->file('media') as $file) {
-            if ($file === null || ! $file->isValid()) {
-                return back()->withErrors(['media' => 'Ada berkas yang gagal diunggah. Silakan coba lagi.'])->withInput();
+        foreach ($validated['media_items'] as $raw) {
+            $item = json_decode($raw, true);
+
+            if (! is_array($item)) {
+                return back()->withErrors(['media_items' => 'Data lampiran tidak valid. Silakan unggah ulang.'])->withInput();
             }
 
-            $uploaded = $this->uploader->upload($file, 'laporan');
-            $uploaded['tipe'] = str_starts_with((string) $file->getMimeType(), 'video/') ? 'video' : 'image';
-            $media[] = $uploaded;
+            $url = (string) ($item['url'] ?? '');
+            $mime = (string) ($item['mime'] ?? '');
+            $path = (string) ($item['path'] ?? '');
+            $size = (int) ($item['size'] ?? 0);
+            $tipe = (string) ($item['tipe'] ?? '');
+
+            $host = parse_url($url, PHP_URL_HOST);
+            $expectedHost = $cloudName !== '' ? $cloudName.'.cloudinary.com' : 'res.cloudinary.com';
+
+            if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL) || $host !== $expectedHost) {
+                return back()->withErrors(['media_items' => 'Lampiran harus berasal dari penyimpanan yang sah.'])->withInput();
+            }
+
+            if (! in_array($mime, $allowedMimes, true)) {
+                return back()->withErrors(['media_items' => 'Format lampiran tidak didukung.'])->withInput();
+            }
+
+            if ($size <= 0 || $size > 10 * 1024 * 1024) {
+                return back()->withErrors(['media_items' => 'Ukuran tiap berkas maksimal 10 MB.'])->withInput();
+            }
+
+            if (! in_array($tipe, ['image', 'video'], true)) {
+                $tipe = str_starts_with($mime, 'video/') ? 'video' : 'image';
+            }
+
+            $media[] = [
+                'path' => $path,
+                'url' => $url,
+                'mime' => $mime,
+                'size' => $size,
+                'tipe' => $tipe,
+            ];
         }
 
         $id = $this->reports->create([
