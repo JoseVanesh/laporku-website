@@ -7,11 +7,11 @@ namespace App\Console\Commands;
 use App\Services\Firestore\UserStore;
 use Illuminate\Console\Command;
 
-class MakeAdmin extends Command
+class MakeRw extends Command
 {
-    protected $signature = 'firebase:make-admin {email : Email pengguna yang akan dijadikan admin}';
+    protected $signature = 'firebase:make-rw {email : Email pengguna yang akan dijadikan RW}';
 
-    protected $description = 'Mengubah peran pengguna di Firestore menjadi admin';
+    protected $description = 'Mengubah peran pengguna di Firestore menjadi rw';
 
     public function handle(UserStore $users): int
     {
@@ -26,9 +26,9 @@ class MakeAdmin extends Command
             return self::FAILURE;
         }
 
-        $users->update($user['uid'], ['role' => 'admin']);
+        $users->update($user['uid'], ['role' => 'rw']);
 
-        $this->info("Peran {$user['nama']} ({$email}) diubah menjadi admin.");
+        $this->info("Peran {$user['nama']} ({$email}) diubah menjadi rw.");
         $this->line('Agar berlaku, pengguna tersebut harus logout lalu login kembali.');
 
         return self::SUCCESS;

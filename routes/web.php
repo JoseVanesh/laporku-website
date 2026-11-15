@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Admin\KategoriController as AdminKategoriController;
 use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
+use App\Http\Controllers\Admin\PengumumanController as AdminPengumumanController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\PengumumanController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -33,15 +35,18 @@ Route::middleware('auth.firebase')->group(function () {
     Route::get('/laporan/{id}', [LaporanController::class, 'show'])->name('laporan.show');
     Route::post('/laporan/{id}/komentar', [LaporanController::class, 'comment'])->name('laporan.comment');
 
+    Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman.index');
+    Route::get('/pengumuman/{id}', [PengumumanController::class, 'show'])->name('pengumuman.show');
+
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::middleware('role:admin,rt')->group(function () {
+        Route::middleware('role:rw,rt')->group(function () {
             Route::get('/laporan', [AdminLaporanController::class, 'index'])->name('laporan.index');
             Route::get('/laporan/{id}', [AdminLaporanController::class, 'show'])->name('laporan.show');
             Route::post('/laporan/{id}/status', [AdminLaporanController::class, 'updateStatus'])->name('laporan.status');
             Route::post('/laporan/{id}/komentar', [AdminLaporanController::class, 'comment'])->name('laporan.comment');
         });
 
-        Route::middleware('role:admin')->group(function () {
+        Route::middleware('role:rw')->group(function () {
             Route::get('/pengguna', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/pengguna/{uid}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
             Route::put('/pengguna/{uid}', [AdminUserController::class, 'update'])->name('users.update');
@@ -49,6 +54,12 @@ Route::middleware('auth.firebase')->group(function () {
             Route::get('/kategori', [AdminKategoriController::class, 'index'])->name('kategori.index');
             Route::post('/kategori', [AdminKategoriController::class, 'store'])->name('kategori.store');
             Route::delete('/kategori/{id}', [AdminKategoriController::class, 'destroy'])->name('kategori.destroy');
+
+            Route::get('/pengumuman', [AdminPengumumanController::class, 'index'])->name('pengumuman.index');
+            Route::post('/pengumuman', [AdminPengumumanController::class, 'store'])->name('pengumuman.store');
+            Route::get('/pengumuman/{id}/edit', [AdminPengumumanController::class, 'edit'])->name('pengumuman.edit');
+            Route::put('/pengumuman/{id}', [AdminPengumumanController::class, 'update'])->name('pengumuman.update');
+            Route::delete('/pengumuman/{id}', [AdminPengumumanController::class, 'destroy'])->name('pengumuman.destroy');
         });
     });
 });

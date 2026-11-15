@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Pengguna')
-@section('subtitle', 'Kelola peran warga, RT/RW, dan admin')
+@section('subtitle', 'Kelola peran warga, RT, dan RW')
 
 @section('content')
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">

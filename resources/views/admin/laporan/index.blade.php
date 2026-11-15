@@ -41,7 +41,7 @@
 
     @if ($blokKosong)
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Akun RT/RW Anda belum memiliki blok. Minta admin mengatur blok Anda di menu
+            Akun RT Anda belum memiliki blok. Minta RW mengatur blok Anda di menu
             <a href="{{ route('admin.users.index') }}" class="font-semibold underline">Pengguna</a>.
         </div>
     @endif

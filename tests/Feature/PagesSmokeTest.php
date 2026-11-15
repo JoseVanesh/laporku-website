@@ -30,19 +30,19 @@ class PagesSmokeTest extends TestCase
         $user = $email !== '' ? app(UserStore::class)->findByEmail($email) : null;
 
         if ($user === null) {
-            $this->markTestSkipped('Pengguna uji tidak ditemukan. Set LAPORKU_SMOKE_EMAIL ke email admin yang sudah terdaftar.');
+            $this->markTestSkipped('Pengguna uji tidak ditemukan. Set LAPORKU_SMOKE_EMAIL ke email rw yang sudah terdaftar.');
         }
 
         $this->sessionData = [
             'firebase.uid' => $user['uid'],
-            'firebase.role' => $user['role'] ?? 'admin',
+            'firebase.role' => $user['role'] ?? 'rw',
             'firebase.name' => $user['nama'] ?? '',
             'firebase.email' => $user['email'] ?? $email,
             'firebase.blok' => $user['blok'] ?? '',
         ];
     }
 
-    public function test_admin_pages(): void
+    public function test_rw_pages(): void
     {
         $paths = [
             '/dashboard',
@@ -53,6 +53,8 @@ class PagesSmokeTest extends TestCase
             '/admin/laporan?status=baru&kategori=Keamanan&blok=C',
             '/admin/pengguna',
             '/admin/kategori',
+            '/admin/pengumuman',
+            '/pengumuman',
         ];
 
         foreach ($paths as $path) {
@@ -66,7 +68,7 @@ class PagesSmokeTest extends TestCase
     {
         $session = ['firebase.role' => 'warga'] + $this->sessionData;
 
-        foreach (['/dashboard', '/laporan', '/laporan?status=baru', '/laporan/baru'] as $path) {
+        foreach (['/dashboard', '/laporan', '/laporan?status=baru', '/laporan/baru', '/pengumuman'] as $path) {
             $this->withSession($session)->get($path)->assertOk();
         }
     }
@@ -75,7 +77,7 @@ class PagesSmokeTest extends TestCase
     {
         $session = ['firebase.role' => 'rt'] + $this->sessionData;
 
-        foreach (['/dashboard', '/admin/laporan', '/admin/laporan?blok=A'] as $path) {
+        foreach (['/dashboard', '/admin/laporan', '/admin/laporan?blok=A', '/pengumuman'] as $path) {
             $this->withSession($session)->get($path)->assertOk();
         }
     }
@@ -86,5 +88,6 @@ class PagesSmokeTest extends TestCase
 
         $this->withSession($session)->get('/admin/pengguna')->assertForbidden();
         $this->withSession($session)->get('/admin/kategori')->assertForbidden();
+        $this->withSession($session)->get('/admin/pengumuman')->assertForbidden();
     }
 }

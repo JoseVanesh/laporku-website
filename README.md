@@ -18,10 +18,10 @@ Storage agar tidak perlu paket berbayar/Blaze).
 
 - **Warga** — daftar & login, membuat laporan (pilih jenis: Keamanan, Kebersihan, Infrastruktur,
   Lingkungan, dll), unggah foto/video, memantau status, berkomentar.
-- **Admin & RT/RW** — memantau semua laporan, filter status/jenis/blok, mengubah status
+- **RW & RT** — memantau semua laporan, filter status/jenis/blok, mengubah status
   (Baru → Diproses → Selesai/Ditolak), membalas komentar.
-  **RT/RW hanya melihat laporan di bloknya.**
-- **Admin** — manajemen peran pengguna (warga / RT-RW / admin) dan jenis pelaporan.
+  **RT hanya melihat laporan di bloknya.**
+- **RW** — manajemen peran pengguna (warga / RT / RW), jenis pelaporan, dan pengumuman.
 - **Notifikasi email** otomatis ke pemilik laporan saat status berubah.
 
 ## Teknologi
@@ -124,15 +124,15 @@ dari `firebase/firestore.indexes.json` sekaligus.
 
 ```sh
 php artisan firebase:seed-categories    # membuat 5 jenis pelaporan default
-php artisan firebase:make-admin email@anda.com   # jadikan diri admin (setelah sekali register)
+php artisan firebase:make-rw email@anda.com   # jadikan diri RW (setelah sekali register)
 ```
 
 Alur peran:
 
 1. Register biasa lewat website → peran **warga**.
-2. Jalankan `firebase:make-admin` untuk akun Anda → peran **admin**.
-3. Di menu **Pengguna**, ubah peran warga lain menjadi **RT/RW** dan isi **blok**-nya
-   (blok dipakai untuk membatasi laporan yang bisa dilihat RT/RW).
+2. Jalankan `firebase:make-rw` untuk akun Anda → peran **rw**.
+3. Di menu **Pengguna**, ubah peran warga lain menjadi **RT** dan isi **blok**-nya
+   (blok dipakai untuk membatasi laporan yang bisa dilihat RT).
 4. Pengguna harus **logout lalu login lagi** agar peran baru berlaku.
 
 ### 6. Jalankan
@@ -172,12 +172,12 @@ Untuk email sungguhan isi `MAIL_*` di `.env`, misal [Mailtrap](https://mailtrap.
 ## Struktur Penting
 
 ```
-app/Http/Middleware/      EnsureFirebaseUser (wajib login), EnsureRole (role:admin,rt)
+app/Http/Middleware/      EnsureFirebaseUser (wajib login), EnsureRole (role:rw,rt)
 app/Http/Controllers/     AuthController, LaporanController, Admin/*
 app/Services/Firestore/   UserStore, ReportStore, CategoryStore (akses Firestore)
 app/Services/Media/       StorageUploader (simpan foto/video ke server lokal)
 app/Notifications/        StatusLaporanBerubah (email ke warga)
-app/Console/Commands/     firebase:seed-categories, firebase:make-admin
+app/Console/Commands/     firebase:seed-categories, firebase:make-rw
 resources/views/          layouts, auth, warga/*, admin/*
 firebase/                 rules + index untuk Firebase Console
 ```
@@ -185,7 +185,7 @@ firebase/                 rules + index untuk Firebase Console
 ## Kumpulan Data Firestore
 
 ```
-users/{uid}                 nama, email, telepon, role(warga|rt|admin), blok, rumah, created_at
+users/{uid}                 nama, email, telepon, role(warga|rt|rw), blok, rumah, created_at
 reports/{id}                uid_penulis, nama_penulis, email_penulis, judul, kategori, deskripsi,
                             lokasi, blok, status, media[{url,tipe,mime,size,path}], created_at, updated_at
 reports/{id}/comments/{id}  uid, nama, peran, isi, sistem(bool), created_at

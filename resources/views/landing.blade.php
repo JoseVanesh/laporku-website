@@ -196,7 +196,7 @@
 
                 @php($langkah = [
                     ['1', 'Buat Laporan', 'Pilih jenis pelaporan, tandai lokasi di peta, tulis uraian, dan unggah bukti foto atau video.'],
-                    ['2', 'Verifikasi Pengurus', 'Admin atau RT/RW memeriksa laporan lalu memperbarui status penanganannya.'],
+                    ['2', 'Verifikasi Pengurus', 'RW atau RT memeriksa laporan lalu memperbarui status penanganannya.'],
                     ['3', 'Pantau Sampai Selesai', 'Terima notifikasi email tiap perubahan status dan berdiskusi lewat komentar.'],
                 ])
                 @foreach ($langkah as $i => [$no, $judul, $isi])
@@ -233,7 +233,7 @@
                     Warga melihat sebarannya, pengurus fokus pada area yang perlu ditangani lebih dulu.
                 </p>
                 <ul class="mt-6 space-y-3">
-                    @foreach (['Marker berwarna sesuai status laporan', 'Cakupan per blok untuk RT/RW, menyeluruh untuk admin', 'Klik marker untuk melihat detail laporan'] as $point)
+                    @foreach (['Marker berwarna sesuai status laporan', 'Cakupan per blok untuk RT, menyeluruh untuk RW', 'Klik marker untuk melihat detail laporan'] as $point)
                         <li class="flex items-start gap-3 text-sm text-slate-700">
                             <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
                                 <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>
@@ -313,7 +313,7 @@
         <div class="mt-12 grid gap-5 md:grid-cols-3">
             @php($testimoni = [
                 ['avatar-1.jpg', 'Bu Sari', 'Warga Blok C', 'Lampu jalan depan rumah saya mati, saya lapor malam dan besoknya sudah diganti. Prosesnya jelas dan bisa dipantau.'],
-                ['avatar-2.jpg', 'Pak Dimas', 'Ketua RT/RW', 'Peta laporan sangat membantu. Saya langsung tahu titik mana yang butuh perhatian dari blok yang saya pegang.'],
+                ['avatar-2.jpg', 'Pak Dimas', 'Ketua RT', 'Peta laporan sangat membantu. Saya langsung tahu titik mana yang butuh perhatian dari blok yang saya pegang.'],
                 ['avatar-3.jpg', 'Mbak Ayu', 'Warga Blok A', 'Fitur komentar bikin komunikasi dengan pengurus jadi rapi. Tidak perlu lagi tanya-tanya di grup yang penuh chat.'],
             ])
             @foreach ($testimoni as $i => [$avatar, $nama, $peran, $isi])

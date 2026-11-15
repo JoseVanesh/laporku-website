@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\Firestore\AnnouncementStore;
 use App\Services\Firestore\ReportStore;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly ReportStore $reports) {}
+    public function __construct(
+        private readonly ReportStore $reports,
+        private readonly AnnouncementStore $announcements,
+    ) {}
 
     public function index()
     {
         $role = (string) session('firebase.role');
-        $isStaff = in_array($role, ['admin', 'rt'], true);
+        $isStaff = in_array($role, ['rw', 'rt'], true);
 
         $scopeFilters = $isStaff
             ? ($role === 'rt' ? ['blok' => (string) session('firebase.blok', '')] : [])
@@ -25,6 +29,7 @@ class DashboardController extends Controller
             'isStaff' => $isStaff,
             'summary' => $this->reports->summary($scopeFilters),
             'latest' => $this->reports->paginate($scopeFilters, 5, 0)['items'],
+            'pengumuman' => $this->announcements->latest(3),
             'statusLabels' => LaporanController::STATUS_LABELS,
             'blokKosong' => $role === 'rt' && (string) session('firebase.blok', '') === '',
             'map' => [
@@ -38,7 +43,7 @@ class DashboardController extends Controller
     public function points(Request $request)
     {
         $role = (string) session('firebase.role');
-        $isStaff = in_array($role, ['admin', 'rt'], true);
+        $isStaff = in_array($role, ['rw', 'rt'], true);
 
         $filters = [];
 

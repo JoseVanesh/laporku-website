@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public const ROLES = ['warga' => 'Warga', 'rt' => 'RT/RW', 'admin' => 'Admin'];
+    public const ROLES = ['warga' => 'Warga', 'rt' => 'RT', 'rw' => 'RW'];
 
     public function __construct(private readonly UserStore $users) {}
 
@@ -65,8 +65,8 @@ class UserController extends Controller
 
         $blok = (string) ($validated['blok'] ?? '');
 
-        if (in_array($validated['role'], ['rt', 'admin'], true) && $blok === '') {
-            return back()->withErrors(['blok' => 'Peran RT/RW dan Admin wajib memiliki blok.'])->withInput();
+        if (in_array($validated['role'], ['rt', 'rw'], true) && $blok === '') {
+            return back()->withErrors(['blok' => 'Peran RT dan RW wajib memiliki blok.'])->withInput();
         }
 
         $this->users->update($uid, [
