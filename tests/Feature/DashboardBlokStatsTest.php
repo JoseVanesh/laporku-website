@@ -31,19 +31,21 @@ class DashboardBlokStatsTest extends TestCase
         ];
     }
 
-    public function test_rk_dashboard_passes_all_blocks_for_rw(): void
+    public function test_rw_dashboard_is_scoped_to_managed_blocks(): void
     {
         $blokStats = ['bloks' => [['blok' => 'A', 'total' => 2], ['blok' => 'B', 'total' => 1]], 'total' => 3];
+        $filters = ['blok' => ['A', 'B']];
 
         $reports = $this->mock(ReportStore::class);
-        $reports->shouldReceive('blokSummary')->once()->with([])->andReturn($blokStats);
-        $reports->shouldReceive('analytics')->once()->with([], 7)->andReturn($this->analyticsPayload());
-        $reports->shouldReceive('summary')->once()->with([])->andReturn([
+        $reports->shouldReceive('blokSummary')->once()->with($filters)->andReturn($blokStats);
+        $reports->shouldReceive('analytics')->once()->with($filters, 7)->andReturn($this->analyticsPayload());
+        $reports->shouldReceive('summary')->once()->with($filters)->andReturn([
             'total' => 3,
             'by_status' => ['baru' => 2, 'diproses' => 0, 'selesai' => 0, 'ditolak' => 1],
             'with_location' => 0,
         ]);
-        $reports->shouldReceive('paginate')->once()->with([], 5, 0)->andReturn(['items' => [], 'has_more' => false]);
+        $reports->shouldReceive('paginate')->once()->with($filters + ['status' => 'baru'], 5, 0)->andReturn(['items' => [], 'has_more' => false]);
+        $reports->shouldReceive('paginate')->once()->with($filters, 5, 0)->andReturn(['items' => [], 'has_more' => false]);
 
         $announcements = $this->mock(AnnouncementStore::class);
         $announcements->shouldReceive('latest')->once()->with(3)->andReturn([]);
@@ -53,7 +55,8 @@ class DashboardBlokStatsTest extends TestCase
             'firebase.role' => 'rw',
             'firebase.name' => 'Pengurus RW',
             'firebase.email' => 'rw@example.com',
-            'firebase.blok' => '',
+            'firebase.blok' => 'A',
+            'firebase.blocks' => ['A', 'B'],
         ])
             ->get('/dashboard')
             ->assertOk()
@@ -100,6 +103,7 @@ class DashboardBlokStatsTest extends TestCase
             'by_status' => ['baru' => 0, 'diproses' => 0, 'selesai' => 0, 'ditolak' => 0],
             'with_location' => 0,
         ]);
+        $reports->shouldReceive('paginate')->once()->with(['status' => 'baru'], 5, 0)->andReturn(['items' => [], 'has_more' => false]);
         $reports->shouldReceive('paginate')->once()->with([], 5, 0)->andReturn(['items' => [], 'has_more' => false]);
 
         $announcements = $this->mock(AnnouncementStore::class);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\BlockScope;
 use App\Services\Firestore\CategoryStore;
 use App\Services\Firestore\ReportStore;
 use Illuminate\Http\Request;
@@ -13,25 +14,24 @@ class AnalyticsController extends Controller
     public function __construct(
         private readonly ReportStore $reports,
         private readonly CategoryStore $categories,
+        private readonly BlockScope $scope,
     ) {}
 
     public function index(Request $request)
     {
-        $role = (string) session('firebase.role');
+        $role = $this->scope->role();
         $days = (int) $request->input('days', 30);
         $days = in_array($days, [7, 30, 90], true) ? $days : 30;
 
-        $filters = [];
+        $filters = $this->scope->reportFilters();
+        $blok = trim($request->string('blok')->toString());
 
-        if ($role === 'rt') {
-            $blok = (string) session('firebase.blok', '');
-            $filters['blok'] = $blok !== '' ? $blok : ReportStore::EMPTY_SCOPE;
-        } else {
-            $blok = trim($request->string('blok')->toString());
-
-            if ($blok !== '') {
+        if ($role === 'rw') {
+            if ($blok !== '' && $this->scope->canAccessBlock($blok)) {
                 $filters['blok'] = $blok;
             }
+        } elseif ($role === 'super_admin' && $blok !== '') {
+            $filters['blok'] = $blok;
         }
 
         $status = $request->string('status')->toString();
@@ -48,19 +48,32 @@ class AnalyticsController extends Controller
         }
 
         $analytics = $this->reports->analytics($filters, $days);
-        $blocks = $role === 'rt' ? [] : $this->reports->blokSummary([])['bloks'];
+
+        if ($role === 'rw') {
+            $blocks = array_map(
+                static fn (string $managedBlock): array => ['blok' => $managedBlock],
+                $this->scope->managedBlocks(),
+            );
+        } elseif ($role === 'super_admin') {
+            $blocks = $this->reports->blokSummary([])['bloks'];
+        } else {
+            $blocks = [];
+        }
+
+        $selectedBlock = $filters['blok'] ?? null;
 
         return view('analisis.index', [
             'role' => $role,
             'days' => $days,
             'filters' => [
-                'blok' => $filters['blok'] ?? null,
+                'blok' => is_string($selectedBlock) ? $selectedBlock : null,
                 'status' => $filters['status'] ?? null,
                 'kategori' => $filters['kategori'] ?? null,
             ],
             'analytics' => $analytics,
             'blocks' => $blocks,
             'kategoriList' => $kategoriList,
+            'blokLabel' => $this->scope->label(),
             'statusLabels' => LaporanController::STATUS_LABELS,
         ]);
     }

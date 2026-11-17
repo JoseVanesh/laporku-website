@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\BlockScope;
 use App\Services\Firestore\CategoryStore;
 use App\Services\Firestore\ReportStore;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class LaporanController extends Controller
     public function __construct(
         private readonly ReportStore $reports,
         private readonly CategoryStore $categories,
+        private readonly BlockScope $scope,
     ) {}
 
     public function index(Request $request)
@@ -193,12 +195,11 @@ class LaporanController extends Controller
      */
     private function authorizeView(array $laporan): void
     {
-        $role = session('firebase.role');
         $isOwner = ($laporan['uid_penulis'] ?? null) === session('firebase.uid');
-        $isStaff = in_array($role, ['rw', 'rt', 'super_admin'], true);
-        $isSameBlock = ($laporan['blok'] ?? '') === session('firebase.blok');
-        $isRtScoped = $role !== 'rt' || $isSameBlock;
+        $isStaff = $this->scope->isStaff();
+        $isBlockAllowed = ! in_array($this->scope->role(), ['rt', 'rw'], true)
+            || $this->scope->canAccessBlock($laporan['blok'] ?? null);
 
-        abort_unless($isOwner || ($isStaff && $isRtScoped), 403);
+        abort_unless($isOwner || ($isStaff && $isBlockAllowed), 403);
     }
 }

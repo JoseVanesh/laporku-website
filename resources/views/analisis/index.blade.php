@@ -25,6 +25,7 @@
             'total' => (int) $row['total'],
         ], $byKategori);
         $isRt = $role === 'rt';
+        $isRw = $role === 'rw';
         $peakHour = $analytics['peak_hour'] ?? null;
     @endphp
 
@@ -32,7 +33,9 @@
         <div>
             <p class="text-sm text-slate-500">
                 @if ($isRt)
-                    Analisis khusus blok <span class="font-semibold text-slate-700">{{ session('firebase.blok') ?: '-' }}</span>.
+                    Analisis khusus <span class="font-semibold text-slate-700">{{ $blokLabel }}</span>.
+                @elseif ($isRw)
+                    Analisis <span class="font-semibold text-slate-700">{{ $blokLabel }}</span> yang Anda urus.
                 @elseif ($role === 'super_admin')
                     Analisis global seluruh blok lingkungan.
                 @else
@@ -49,9 +52,9 @@
         </div>
     </div>
 
-    @if ($isRt && session('firebase.blok') === '')
+    @if (($isRt && trim((string) session('firebase.blok', '')) === '') || ($isRw && empty($blocks)))
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Akun RT Anda belum memiliki blok. Minta RW atau Super Admin mengatur blok Anda di menu Pengguna.
+            Akun {{ $isRw ? 'RW' : 'RT' }} Anda belum memiliki blok. Minta Super Admin mengatur blok Anda di menu Pengguna.
         </div>
     @endif
 

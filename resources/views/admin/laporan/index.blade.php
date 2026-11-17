@@ -1,13 +1,15 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Kelola Laporan')
-@section('subtitle', $blokTerbatas ? 'Laporan untuk blok Anda' : 'Semua laporan warga')
+@section('subtitle', $blokTerbatas ? 'Laporan untuk blok Anda' : (! empty($blokOptions) ? 'Laporan blok yang Anda urus' : 'Semua laporan warga'))
 
 @section('content')
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
         <p class="text-sm text-slate-500">
             @if ($blokTerbatas)
-                Anda melihat laporan dari blok <span class="font-semibold text-slate-700">{{ session('firebase.blok') ?: '-' }}</span> saja.
+                Anda melihat laporan dari <span class="font-semibold text-slate-700">{{ $blokLabel }}</span> saja.
+            @elseif (! empty($blokOptions))
+                Anda melihat laporan dari <span class="font-semibold text-slate-700">{{ $blokLabel }}</span> saja.
             @else
                 Semua laporan dari warga perumahan.
             @endif
@@ -28,7 +30,14 @@
                 @endforeach
             </select>
 
-            @if (! $blokTerbatas)
+            @if (! $blokTerbatas && ! empty($blokOptions))
+                <select name="blok" onchange="this.form.submit()" class="field w-auto py-2">
+                    <option value="">Semua blok saya</option>
+                    @foreach ($blokOptions as $blokOption)
+                        <option value="{{ $blokOption }}" @selected(($filters['blok'] ?? '') === $blokOption)>Blok {{ $blokOption }}</option>
+                    @endforeach
+                </select>
+            @elseif (! $blokTerbatas)
                 <input type="text" name="blok" value="{{ $filters['blok'] ?? '' }}" placeholder="Filter blok (mis. A)" class="field w-40 py-2">
                 <button type="submit" class="btn-ghost py-2">Terapkan</button>
             @endif
@@ -41,7 +50,7 @@
 
     @if ($blokKosong)
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Akun RT Anda belum memiliki blok. Minta RW mengatur blok Anda di menu
+            Akun {{ $blokTerbatas ? 'RT' : 'RW' }} Anda belum memiliki blok. Minta Super Admin mengatur blok Anda di menu
             <a href="{{ route('admin.users.index') }}" class="font-semibold underline">Pengguna</a>.
         </div>
     @endif

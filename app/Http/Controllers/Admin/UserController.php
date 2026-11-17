@@ -42,6 +42,7 @@ class UserController extends Controller
         return view('admin.users.edit', [
             'user' => $user,
             'roles' => $this->assignableRoles(),
+            'blocks' => (array) config('laporku.blocks', []),
         ]);
     }
 
@@ -57,21 +58,46 @@ class UserController extends Controller
 
         $roles = $this->assignableRoles();
 
+        $blocks = (array) config('laporku.blocks', []);
+
         $validated = $request->validate([
             'nama' => 'required|string|min:3|max:100',
             'telepon' => 'required|string|min:9|max:20',
             'role' => 'required|in:'.implode(',', array_keys($roles)),
             'blok' => 'nullable|string|max:20',
+            'bloks' => 'nullable|array',
+            'bloks.*' => 'string|in:'.implode(',', $blocks),
             'rumah' => 'nullable|string|max:20',
         ], [
             'nama.required' => 'Nama wajib diisi.',
             'role.in' => 'Peran tidak valid.',
+            'bloks.*.in' => 'Blok yang dipilih tidak valid.',
         ]);
 
-        $blok = (string) ($validated['blok'] ?? '');
+        $blok = trim((string) ($validated['blok'] ?? ''));
+        $bloks = array_values(array_unique(array_filter(array_map(
+            static fn (mixed $block): string => trim((string) $block),
+            (array) ($validated['bloks'] ?? []),
+        ))));
 
-        if (in_array($validated['role'], ['rt', 'rw'], true) && $blok === '') {
-            return back()->withErrors(['blok' => 'Peran RT dan RW wajib memiliki blok.'])->withInput();
+        if ($validated['role'] === 'rw') {
+            if ($bloks === [] && $blok !== '') {
+                $bloks = [$blok];
+            }
+
+            if ($bloks === []) {
+                return back()->withErrors(['bloks' => 'Peran RW wajib memiliki minimal satu blok.'])->withInput();
+            }
+
+            if (! in_array($blok, $bloks, true)) {
+                $blok = $bloks[0];
+            }
+        } else {
+            $bloks = [];
+
+            if ($validated['role'] === 'rt' && $blok === '') {
+                return back()->withErrors(['blok' => 'Peran RT wajib memiliki blok.'])->withInput();
+            }
         }
 
         $this->users->update($uid, [
@@ -79,6 +105,7 @@ class UserController extends Controller
             'telepon' => $validated['telepon'],
             'role' => $validated['role'],
             'blok' => $blok,
+            'bloks' => $bloks,
             'rumah' => (string) ($validated['rumah'] ?? ''),
         ]);
 

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LaporanController as WargaLaporanController;
 use App\Notifications\StatusLaporanBerubah;
+use App\Services\BlockScope;
 use App\Services\Firestore\CategoryStore;
 use App\Services\Firestore\ReportStore;
 use Illuminate\Http\Request;
@@ -17,23 +18,26 @@ class LaporanController extends Controller
     public function __construct(
         private readonly ReportStore $reports,
         private readonly CategoryStore $categories,
+        private readonly BlockScope $scope,
     ) {}
 
     public function index(Request $request)
     {
-        $role = session('firebase.role');
+        $role = $this->scope->role();
         $page = max(1, (int) $request->input('page', 1));
 
         $status = $request->string('status')->toString();
         $kategori = $request->string('kategori')->toString();
-        $blokInput = $request->string('blok')->toString();
+        $blokInput = trim($request->string('blok')->toString());
 
-        $filters = [];
+        $filters = $this->scope->reportFilters();
+        $managedBlocks = $this->scope->managedBlocks();
 
-        if ($role === 'rt') {
-            $blok = (string) session('firebase.blok', '');
-            $filters['blok'] = $blok !== '' ? $blok : ReportStore::EMPTY_SCOPE;
-        } elseif ($blokInput !== '') {
+        if ($role === 'rw') {
+            if ($blokInput !== '' && $this->scope->canAccessBlock($blokInput)) {
+                $filters['blok'] = $blokInput;
+            }
+        } elseif ($role === 'super_admin' && $blokInput !== '') {
             $filters['blok'] = $blokInput;
         }
 
@@ -46,6 +50,7 @@ class LaporanController extends Controller
         }
 
         $result = $this->reports->paginate($filters, 15, ($page - 1) * 15);
+        $selectedBlock = $filters['blok'] ?? null;
 
         return view('admin.laporan.index', [
             'laporan' => $result['items'],
@@ -54,12 +59,14 @@ class LaporanController extends Controller
             'filters' => [
                 'status' => $filters['status'] ?? null,
                 'kategori' => $filters['kategori'] ?? null,
-                'blok' => $filters['blok'] ?? null,
+                'blok' => is_string($selectedBlock) ? $selectedBlock : null,
             ],
             'statusLabels' => WargaLaporanController::STATUS_LABELS,
             'kategoriList' => $this->categories->all(),
             'blokTerbatas' => $role === 'rt',
-            'blokKosong' => $role === 'rt' && session('firebase.blok', '') === '',
+            'blokOptions' => $role === 'rw' ? $managedBlocks : [],
+            'blokKosong' => in_array($role, ['rt', 'rw'], true) && $managedBlocks === [],
+            'blokLabel' => $this->scope->label(),
         ]);
     }
 
@@ -150,14 +157,14 @@ class LaporanController extends Controller
     }
 
     /**
-     * RT hanya boleh mengakses laporan dari bloknya sendiri.
+     * RT/RW hanya boleh mengakses laporan dari blok yang diurusnya.
      *
      * @param  array<string, mixed>  $laporan
      */
     private function authorizeReport(array $laporan): void
     {
-        if (session('firebase.role') === 'rt') {
-            abort_unless(($laporan['blok'] ?? '') === session('firebase.blok'), 403);
+        if (in_array($this->scope->role(), ['rt', 'rw'], true)) {
+            abort_unless($this->scope->canAccessBlock($laporan['blok'] ?? null), 403);
         }
     }
 }

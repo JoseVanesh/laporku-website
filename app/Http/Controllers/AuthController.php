@@ -194,6 +194,10 @@ class AuthController extends Controller
         $request->session()->put('firebase.uid', (string) $user['uid']);
         $request->session()->put('firebase.role', (string) ($user['role'] ?? 'warga'));
         $request->session()->put('firebase.blok', (string) ($user['blok'] ?? ''));
+        $request->session()->put('firebase.blocks', array_values(array_filter(array_map(
+            static fn (mixed $block): string => trim((string) $block),
+            (array) ($user['bloks'] ?? []),
+        ))));
         $request->session()->put('firebase.name', (string) ($user['nama'] ?? ''));
         $request->session()->put('firebase.email', (string) ($user['email'] ?? ''));
         $request->session()->regenerate();

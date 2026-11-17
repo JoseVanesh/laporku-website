@@ -49,7 +49,18 @@
                                     <p class="text-slate-700">{{ $user['email'] ?? '-' }}</p>
                                     <p class="text-xs text-slate-500">{{ $user['telepon'] ?? '-' }}</p>
                                 </td>
-                                <td class="px-4 py-3 text-slate-700">{{ $user['blok'] ?: '-' }} {{ ! empty($user['rumah']) ? '/ ' . $user['rumah'] : '' }}</td>
+                                <td class="px-4 py-3 text-slate-700">
+                                    @php
+                                        $blokList = array_values(array_filter((array) ($user['bloks'] ?? [])));
+                                        $isRwUser = ($user['role'] ?? '') === 'rw' && $blokList !== [];
+                                    @endphp
+                                    @if ($isRwUser)
+                                        <p>Blok {{ implode(', ', $blokList) }}</p>
+                                        <p class="text-xs text-slate-500">Mengampu {{ count($blokList) }} blok</p>
+                                    @else
+                                        {{ $user['blok'] ?: '-' }} {{ ! empty($user['rumah']) ? '/ ' . $user['rumah'] : '' }}
+                                    @endif
+                                </td>
                                 <td class="px-4 py-3">
                                     <span class="rounded-full bg-mist-100 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-100">{{ $roles[$user['role'] ?? 'warga'] ?? '-' }}</span>
                                 </td>

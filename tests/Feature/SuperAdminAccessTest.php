@@ -57,6 +57,7 @@ class SuperAdminAccessTest extends TestCase
             'telepon' => '08123456789',
             'role' => 'rw',
             'blok' => 'B',
+            'bloks' => ['B'],
             'rumah' => '',
         ]);
 
@@ -69,6 +70,62 @@ class SuperAdminAccessTest extends TestCase
                 'rumah' => '',
             ])
             ->assertRedirect(route('admin.users.index'));
+    }
+
+    public function test_super_admin_can_assign_multiple_blocks_to_rw(): void
+    {
+        $users = $this->mock(UserStore::class);
+        $users->shouldReceive('find')->once()->with('target-uid')->andReturn([
+            'uid' => 'target-uid',
+            'nama' => 'Ketua RW',
+            'telepon' => '08123456789',
+            'role' => 'rw',
+            'blok' => 'A',
+            'bloks' => ['A'],
+            'rumah' => '',
+        ]);
+        $users->shouldReceive('update')->once()->with('target-uid', [
+            'nama' => 'Ketua RW',
+            'telepon' => '08123456789',
+            'role' => 'rw',
+            'blok' => 'C',
+            'bloks' => ['A', 'B', 'C', 'D', 'E'],
+            'rumah' => '',
+        ]);
+
+        $this->withSession($this->sessionFor('super_admin', 'super-uid'))
+            ->put('/admin/pengguna/target-uid', [
+                'nama' => 'Ketua RW',
+                'telepon' => '08123456789',
+                'role' => 'rw',
+                'blok' => 'C',
+                'bloks' => ['A', 'B', 'C', 'D', 'E'],
+            ])
+            ->assertRedirect(route('admin.users.index'));
+    }
+
+    public function test_rw_must_have_at_least_one_block(): void
+    {
+        $users = $this->mock(UserStore::class);
+        $users->shouldReceive('find')->once()->with('target-uid')->andReturn([
+            'uid' => 'target-uid',
+            'nama' => 'Warga Uji',
+            'telepon' => '08123456789',
+            'role' => 'warga',
+            'blok' => 'A',
+            'rumah' => '',
+        ]);
+        $users->shouldNotReceive('update');
+
+        $this->withSession($this->sessionFor('super_admin', 'super-uid'))
+            ->put('/admin/pengguna/target-uid', [
+                'nama' => 'Warga Uji',
+                'telepon' => '08123456789',
+                'role' => 'rw',
+                'blok' => '',
+            ])
+            ->assertRedirect()
+            ->assertSessionHasErrors('bloks');
     }
 
     public function test_rw_cannot_promote_user_to_super_admin(): void

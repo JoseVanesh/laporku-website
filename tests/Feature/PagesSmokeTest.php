@@ -39,6 +39,7 @@ class PagesSmokeTest extends TestCase
             'firebase.name' => $user['nama'] ?? '',
             'firebase.email' => $user['email'] ?? $email,
             'firebase.blok' => $user['blok'] ?? '',
+            'firebase.blocks' => array_values((array) ($user['bloks'] ?? [])),
         ];
     }
 
@@ -62,7 +63,7 @@ class PagesSmokeTest extends TestCase
             $this->withSession($this->sessionData)->get($path)->assertOk();
         }
 
-        $this->withSession($this->sessionData)->get('/dashboard/points')->assertOk()->assertJsonStructure(['points', 'server_time']);
+        $this->withSession($this->sessionData)->get('/dashboard/points')->assertForbidden();
     }
 
     public function test_warga_pages(): void
@@ -72,6 +73,8 @@ class PagesSmokeTest extends TestCase
         foreach (['/dashboard', '/laporan', '/laporan?status=baru', '/laporan/baru', '/pengumuman'] as $path) {
             $this->withSession($session)->get($path)->assertOk();
         }
+
+        $this->withSession($session)->get('/dashboard/points')->assertOk()->assertJsonStructure(['points', 'server_time']);
     }
 
     public function test_rt_scoped_pages(): void

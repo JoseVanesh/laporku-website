@@ -31,9 +31,10 @@ class AnalyticsAccessTest extends TestCase
     }
 
     /**
-     * @return array<string, string>
+     * @param  array<int, string>  $blocks
+     * @return array<string, mixed>
      */
-    private function sessionFor(string $role, string $blok = 'A'): array
+    private function sessionFor(string $role, string $blok = 'A', array $blocks = []): array
     {
         return [
             'firebase.uid' => $role.'-uid',
@@ -41,6 +42,7 @@ class AnalyticsAccessTest extends TestCase
             'firebase.name' => 'Pengguna Uji',
             'firebase.email' => $role.'@example.com',
             'firebase.blok' => $blok,
+            'firebase.blocks' => $blocks,
         ];
     }
 
@@ -82,24 +84,37 @@ class AnalyticsAccessTest extends TestCase
             ->assertViewHas('filters', fn (array $filters): bool => $filters['blok'] === ReportStore::EMPTY_SCOPE);
     }
 
-    public function test_rw_can_filter_analytics_by_block(): void
+    public function test_rw_can_filter_analytics_by_managed_block(): void
     {
         $reports = $this->mock(ReportStore::class);
         $reports->shouldReceive('analytics')
             ->once()
             ->with(['blok' => 'B'], 7)
             ->andReturn($this->analyticsPayload());
-        $reports->shouldReceive('blokSummary')->once()->with([])->andReturn([
-            'bloks' => [['blok' => 'A', 'total' => 1], ['blok' => 'B', 'total' => 1]],
-            'total' => 2,
-        ]);
 
         $this->mockCategories();
 
-        $this->withSession($this->sessionFor('rw', ''))
+        $this->withSession($this->sessionFor('rw', 'A', ['A', 'B']))
             ->get('/analisis?days=7&blok=B')
             ->assertOk()
-            ->assertViewHas('days', 7);
+            ->assertViewHas('days', 7)
+            ->assertViewHas('blocks', [['blok' => 'A'], ['blok' => 'B']]);
+    }
+
+    public function test_rw_cannot_filter_analytics_outside_managed_blocks(): void
+    {
+        $reports = $this->mock(ReportStore::class);
+        $reports->shouldReceive('analytics')
+            ->once()
+            ->with(['blok' => ['F', 'G', 'H', 'I', 'J']], 30)
+            ->andReturn($this->analyticsPayload());
+
+        $this->mockCategories();
+
+        $this->withSession($this->sessionFor('rw', 'F', ['F', 'G', 'H', 'I', 'J']))
+            ->get('/analisis?blok=A')
+            ->assertOk()
+            ->assertViewHas('filters', fn (array $filters): bool => $filters['blok'] === null);
     }
 
     public function test_super_admin_can_open_analytics_without_block_filter(): void

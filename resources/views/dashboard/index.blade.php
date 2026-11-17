@@ -6,6 +6,7 @@
 @section('content')
     @php
         $greeting = 'Selamat datang, ' . explode(' ', (string) session('firebase.name', 'Warga'))[0];
+        $isManager = in_array($role, ['rw', 'super_admin'], true);
         $cards = [
             ['Total', $summary['total'], 'text-slate-900', 'bg-mist-100 text-brand-700'],
             ['Baru', $summary['by_status']['baru'] ?? 0, 'text-amber-600', 'bg-amber-50 text-amber-600'],
@@ -35,7 +36,7 @@
 
     @if ($blokKosong)
         <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Akun RT Anda belum memiliki blok. Minta RW mengatur blok Anda di menu
+            Akun {{ $role === 'rw' ? 'RW' : 'RT' }} Anda belum memiliki blok. Minta Super Admin mengatur blok Anda di menu
             <a href="{{ route('admin.users.index') }}" class="font-semibold underline">Pengguna</a>.
         </div>
     @endif
@@ -92,43 +93,87 @@
     </div>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-3">
-        <div class="card overflow-hidden xl:col-span-2">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
-                <div class="flex items-center gap-2">
-                    <span class="relative flex h-2.5 w-2.5">
-                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
-                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-500"></span>
-                    </span>
-                    <h3 class="font-semibold text-slate-900">Peta laporan real-time</h3>
+        @if ($isStaff)
+            <div class="card overflow-hidden xl:col-span-2">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
+                    <div>
+                        <h3 class="font-semibold text-slate-900">Aksi Cepat Pengurus</h3>
+                        <p class="mt-1 text-xs text-slate-500">{{ $blokLabel }} &middot; pantau dan tindak lanjuti laporan warga.</p>
+                    </div>
+                    <a href="{{ route('analisis.index') }}" class="text-xs font-semibold text-brand-600 hover:text-brand-500">Buka analisis &rarr;</a>
                 </div>
-                <p data-map-status class="text-xs font-medium text-brand-600">Menghubungkan...</p>
-            </div>
 
-            <div class="flex flex-wrap gap-2 border-b border-brand-50 px-5 py-3" id="map-filters">
-                @php($statusOptions = ['' => 'Semua'] + $statusLabels)
-                @foreach ($statusOptions as $value => $label)
-                    <button type="button" data-status="{{ $value }}"
-                            class="chip-toggle {{ $value === '' ? 'is-active' : '' }}">{{ $label }}</button>
-                @endforeach
-                <span class="ml-auto self-center text-xs text-slate-500"><span data-map-count>0</span> titik terpetakan</span>
-            </div>
+                <div class="grid gap-3 px-5 py-5 sm:grid-cols-3">
+                    <div class="rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-inset ring-amber-100">
+                        <p class="text-xs font-medium text-amber-700">Perlu ditindak</p>
+                        <p class="mt-1 text-2xl font-bold text-amber-800">{{ $summary['by_status']['baru'] ?? 0 }}</p>
+                        <p class="mt-1 text-xs text-amber-700">Laporan berstatus baru</p>
+                    </div>
+                    <div class="rounded-xl bg-brand-50 px-4 py-3 ring-1 ring-inset ring-brand-100">
+                        <p class="text-xs font-medium text-brand-700">Selesai</p>
+                        <p class="mt-1 text-2xl font-bold text-brand-800">{{ $summary['by_status']['selesai'] ?? 0 }}</p>
+                        <p class="mt-1 text-xs text-brand-700">{{ $analytics['completion_rate'] ?? 0 }}% tingkat penyelesaian</p>
+                    </div>
+                    <div class="rounded-xl bg-mist-50 px-4 py-3 ring-1 ring-inset ring-brand-100">
+                        <p class="text-xs font-medium text-slate-500">Rata-rata / hari</p>
+                        <p class="mt-1 text-2xl font-bold text-slate-900">{{ $analytics['avg_per_day'] ?? 0 }}</p>
+                        <p class="mt-1 text-xs text-slate-500">7 hari terakhir</p>
+                    </div>
+                </div>
 
-            <div id="dashboard-map"
-                 class="h-[24rem] w-full"
-                 data-points-url="{{ $map['pointsUrl'] }}"
-                 data-center-lat="{{ $map['center']['lat'] }}"
-                 data-center-lng="{{ $map['center']['lng'] }}"
-                 data-zoom="{{ $map['zoom'] }}"></div>
-
-            <div class="border-t border-brand-50 px-5 py-3 text-xs text-slate-500">
-                Titik diperbarui otomatis setiap 12 detik.
-                @if ($role === 'rt')
-                    Menampilkan laporan dari blok <span class="font-semibold text-slate-700">{{ session('firebase.blok') ?: '-' }}</span>.
-                @elseif (! $isStaff)
-                    Detail laporan warga lain dibatasi; Anda tetap dapat melihat sebarannya di peta.
-                @endif
+                <div class="border-t border-brand-50 px-5 py-4">
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('admin.laporan.index', ['status' => 'baru']) }}" class="btn-primary py-2">Tinjau Laporan Baru</a>
+                        <a href="{{ route('admin.laporan.index') }}" class="btn-ghost py-2">Kelola Laporan</a>
+                        @if ($isManager)
+                            <a href="{{ route('admin.users.index') }}" class="btn-ghost py-2">Kelola Pengguna</a>
+                        @endif
+                    </div>
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between text-xs text-slate-500">
+                            <span>Penyelesaian laporan</span>
+                            <span class="font-semibold text-slate-700">{{ $analytics['completion_rate'] ?? 0 }}%</span>
+                        </div>
+                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-mist-100">
+                            <div class="h-full rounded-full bg-brand-500" style="width: {{ min(100, (float) ($analytics['completion_rate'] ?? 0)) }}%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        @else
+            <div class="card overflow-hidden xl:col-span-2">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
+                    <div class="flex items-center gap-2">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+                            <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-500"></span>
+                        </span>
+                        <h3 class="font-semibold text-slate-900">Peta laporan real-time</h3>
+                    </div>
+                    <p data-map-status class="text-xs font-medium text-brand-600">Menghubungkan...</p>
+                </div>
+
+                <div class="flex flex-wrap gap-2 border-b border-brand-50 px-5 py-3" id="map-filters">
+                    @php($statusOptions = ['' => 'Semua'] + $statusLabels)
+                    @foreach ($statusOptions as $value => $label)
+                        <button type="button" data-status="{{ $value }}"
+                                class="chip-toggle {{ $value === '' ? 'is-active' : '' }}">{{ $label }}</button>
+                    @endforeach
+                    <span class="ml-auto self-center text-xs text-slate-500"><span data-map-count>0</span> titik terpetakan</span>
+                </div>
+
+                <div id="dashboard-map"
+                     class="h-[24rem] w-full"
+                     data-points-url="{{ $map['pointsUrl'] }}"
+                     data-center-lat="{{ $map['center']['lat'] }}"
+                     data-center-lng="{{ $map['center']['lng'] }}"
+                     data-zoom="{{ $map['zoom'] }}"></div>
+
+                <div class="border-t border-brand-50 px-5 py-3 text-xs text-slate-500">
+                    Titik diperbarui otomatis setiap 12 detik. Detail laporan warga lain dibatasi; Anda tetap dapat melihat sebarannya di peta.
+                </div>
+            </div>
+        @endif
 
         <div class="card overflow-hidden">
             <div class="flex items-center justify-between border-b border-brand-50 px-5 py-4">
@@ -194,12 +239,12 @@
         </div>
     @endif
 
-    @if ($role === 'rt' && ! empty($perluTindak))
+    @if ($isStaff && ! empty($perluTindak))
         <div class="mt-6 card overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
                 <div>
                     <h3 class="font-semibold text-slate-900">Perlu Ditindak</h3>
-                    <p class="mt-1 text-xs text-slate-500">Laporan baru di blok {{ session('firebase.blok') ?: '-' }} yang menunggu respons.</p>
+                    <p class="mt-1 text-xs text-slate-500">Laporan baru di {{ $blokLabel }} yang menunggu respons.</p>
                 </div>
                 <a href="{{ route('admin.laporan.index', ['status' => 'baru']) }}" class="text-xs font-semibold text-brand-600 hover:text-brand-500">Lihat semua</a>
             </div>
@@ -291,9 +336,10 @@
         </div>
     @endif
 
-    @push('scripts')
-        <script>
-            (function () {
+    @if (! $isStaff)
+        @push('scripts')
+            <script>
+                (function () {
                 var box = document.getElementById('map-filters');
                 if (!box) return;
 
@@ -309,7 +355,8 @@
                         window.laporkuDashboardMap.setFilter(button.dataset.status);
                     }
                 });
-            })();
-        </script>
-    @endpush
+                })();
+            </script>
+        @endpush
+    @endif
 @endsection

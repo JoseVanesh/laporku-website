@@ -20,6 +20,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Daftar Blok Lingkungan
+    |--------------------------------------------------------------------------
+    |
+    | Blok yang dapat dipilih saat mengatur akun RT/RW dan dipakai oleh
+    | perintah pembuatan akun contoh.
+    |
+    */
+
+    'blocks' => array_map(static fn (string $block): string => strtoupper($block), range('a', 'j')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Super Admin Awal
     |--------------------------------------------------------------------------
     |

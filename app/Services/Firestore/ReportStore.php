@@ -24,6 +24,24 @@ class ReportStore
         return $this->collection()->add($data)->id();
     }
 
+    /**
+     * Membuat laporan dengan ID tetap agar proses seed dapat diulang tanpa duplikasi.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createWithId(string $id, array $data): bool
+    {
+        $document = $this->collection()->document($id);
+
+        if ($document->snapshot()->exists()) {
+            return false;
+        }
+
+        $document->set($data);
+
+        return true;
+    }
+
     public function find(string $id): ?array
     {
         $snapshot = $this->collection()->document($id)->snapshot();
@@ -37,19 +55,14 @@ class ReportStore
 
     /**
      * Filter yang didukung: uid_penulis, status, kategori, blok.
+     * Nilai blok boleh berupa string atau array blok.
      *
-     * @param  array<string, string|null>  $filters
+     * @param  array<string, string|array<int, string>|null>  $filters
      * @return array{items: array<int, array<string, mixed>>, has_more: bool}
      */
     public function paginate(array $filters = [], int $perPage = 15, int $offset = 0): array
     {
-        $query = $this->collection();
-
-        foreach (['uid_penulis', 'status', 'kategori', 'blok'] as $field) {
-            if (! empty($filters[$field])) {
-                $query = $query->where($field, '=', $filters[$field]);
-            }
-        }
+        $query = $this->filteredQuery($filters);
 
         $documents = $query
             ->orderBy('created_at', Query::DIR_DESCENDING)
@@ -82,18 +95,12 @@ class ReportStore
     /**
      * Titik laporan yang memiliki koordinat, untuk ditampilkan di peta.
      *
-     * @param  array<string, string|null>  $filters
+     * @param  array<string, string|array<int, string>|null>  $filters
      * @return array<int, array<string, mixed>>
      */
     public function mapPoints(array $filters = [], int $limit = 300): array
     {
-        $query = $this->collection();
-
-        foreach (['status', 'kategori', 'blok'] as $field) {
-            if (! empty($filters[$field])) {
-                $query = $query->where($field, '=', $filters[$field]);
-            }
-        }
+        $query = $this->filteredQuery($filters);
 
         $documents = $query
             ->orderBy('created_at', Query::DIR_DESCENDING)
@@ -122,18 +129,12 @@ class ReportStore
     /**
      * Ringkasan jumlah laporan per status untuk kartu statistik dashboard.
      *
-     * @param  array<string, string|null>  $filters
+     * @param  array<string, string|array<int, string>|null>  $filters
      * @return array{total: int, by_status: array<string, int>, with_location: int}
      */
     public function summary(array $filters = [], int $limit = 500): array
     {
-        $query = $this->collection();
-
-        foreach (['uid_penulis', 'status', 'kategori', 'blok'] as $field) {
-            if (! empty($filters[$field])) {
-                $query = $query->where($field, '=', $filters[$field]);
-            }
-        }
+        $query = $this->filteredQuery($filters);
 
         $documents = $query
             ->orderBy('created_at', Query::DIR_DESCENDING)
@@ -166,18 +167,12 @@ class ReportStore
     /**
      * Jumlah laporan per blok untuk grafik pantauan RW dan RT.
      *
-     * @param  array<string, string|null>  $filters
+     * @param  array<string, string|array<int, string>|null>  $filters
      * @return array{bloks: array<int, array{blok: string, total: int}>, total: int}
      */
     public function blokSummary(array $filters = [], int $limit = 500): array
     {
-        $query = $this->collection();
-
-        foreach (['uid_penulis', 'status', 'kategori', 'blok'] as $field) {
-            if (! empty($filters[$field])) {
-                $query = $query->where($field, '=', $filters[$field]);
-            }
-        }
+        $query = $this->filteredQuery($filters);
 
         $documents = $query
             ->orderBy('created_at', Query::DIR_DESCENDING)
@@ -215,7 +210,7 @@ class ReportStore
     /**
      * Agregasi analitik laporan dalam rentang hari tertentu.
      *
-     * @param  array<string, string|null>  $filters
+     * @param  array<string, string|array<int, string>|null>  $filters
      * @return array{
      *     total: int,
      *     by_status: array<string, int>,
@@ -235,13 +230,7 @@ class ReportStore
         $days = max(1, min(365, $days));
         $start = now()->startOfDay()->subDays($days - 1);
 
-        $query = $this->collection();
-
-        foreach (['uid_penulis', 'status', 'kategori', 'blok'] as $field) {
-            if (! empty($filters[$field])) {
-                $query = $query->where($field, '=', $filters[$field]);
-            }
-        }
+        $query = $this->filteredQuery($filters);
 
         $documents = $query
             ->orderBy('created_at', Query::DIR_DESCENDING)
@@ -386,6 +375,34 @@ class ReportStore
         }
 
         return $items;
+    }
+
+    /**
+     * @param  array<string, string|array<int, string>|null>  $filters
+     */
+    private function filteredQuery(array $filters = []): Query
+    {
+        $query = $this->collection();
+
+        foreach (['uid_penulis', 'status', 'kategori', 'blok'] as $field) {
+            $value = $filters[$field] ?? null;
+
+            if (is_array($value)) {
+                $value = array_values(array_filter($value, static fn (mixed $item): bool => trim((string) $item) !== ''));
+
+                $query = $value !== []
+                    ? $query->where($field, 'in', $value)
+                    : $query->where($field, '=', self::EMPTY_SCOPE);
+
+                continue;
+            }
+
+            if (! empty($value)) {
+                $query = $query->where($field, '=', $value);
+            }
+        }
+
+        return $query;
     }
 
     private function collection(): CollectionReference
