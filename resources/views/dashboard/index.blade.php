@@ -40,6 +40,43 @@
         </div>
     @endif
 
+    @if ($isSuperAdmin && $superAdminSummary)
+        <div class="mb-6 card overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
+                <div>
+                    <h3 class="font-semibold text-slate-900">Pusat Kendali Super Admin</h3>
+                    <p class="mt-1 text-xs text-slate-500">Atur peran RT/RW, blok, dan seluruh data lingkungan dari satu tempat.</p>
+                </div>
+                <a href="{{ route('admin.users.index') }}" class="btn-primary py-2">Kelola Pengguna</a>
+            </div>
+            <div class="grid gap-3 px-5 py-5 sm:grid-cols-3">
+                <div class="rounded-xl bg-mist-50 px-4 py-3 ring-1 ring-inset ring-brand-100">
+                    <p class="text-xs font-medium text-slate-500">Total Pengguna</p>
+                    <p class="mt-1 text-2xl font-bold text-slate-900">{{ $superAdminSummary['total'] }}</p>
+                </div>
+                <div class="rounded-xl bg-mist-50 px-4 py-3 ring-1 ring-inset ring-brand-100">
+                    <p class="text-xs font-medium text-slate-500">Blok Terdata</p>
+                    <p class="mt-1 text-2xl font-bold text-slate-900">{{ count($superAdminSummary['blocks']) }}</p>
+                    <p class="mt-1 truncate text-xs text-slate-500">{{ implode(', ', $superAdminSummary['blocks']) ?: 'Belum ada blok' }}</p>
+                </div>
+                <div class="rounded-xl bg-mist-50 px-4 py-3 ring-1 ring-inset ring-brand-100">
+                    <p class="text-xs font-medium text-slate-500">Peran</p>
+                    <div class="mt-1 flex flex-wrap gap-1.5">
+                        @foreach ((array) config('laporku.roles') as $kode => $label)
+                            <span class="rounded-full bg-white px-2 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-100">{{ $label }}: {{ $superAdminSummary['by_role'][$kode] ?? 0 }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 border-t border-brand-50 px-5 py-3">
+                <a href="{{ route('analisis.index') }}" class="chip-toggle">Analisis Laporan</a>
+                <a href="{{ route('admin.laporan.index') }}" class="chip-toggle">Kelola Laporan</a>
+                <a href="{{ route('admin.kategori.index') }}" class="chip-toggle">Jenis Laporan</a>
+                <a href="{{ route('admin.pengumuman.index') }}" class="chip-toggle">Kelola Pengumuman</a>
+            </div>
+        </div>
+    @endif
+
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as [$label, $value, $valueClass, $iconClass])
             <div class="card p-5">
@@ -125,32 +162,80 @@
     </div>
 
     @if ($isStaff)
-        <div class="mt-6 card overflow-hidden">
-            <div class="flex items-center justify-between border-b border-brand-50 px-5 py-4">
-                <div>
-                    <h3 class="font-semibold text-slate-900">Laporan per Blok</h3>
-                    <p class="mt-1 text-xs text-slate-500">Jumlah laporan kejadian per blok untuk pantauan.</p>
+        <div class="mt-6 grid gap-6 xl:grid-cols-3">
+            <div class="card overflow-hidden xl:col-span-2">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
+                    <div>
+                        <h3 class="font-semibold text-slate-900">Tren 7 Hari Terakhir</h3>
+                        <p class="mt-1 text-xs text-slate-500">{{ $analytics['total'] ?? 0 }} laporan masuk &middot; rata-rata {{ $analytics['avg_per_day'] ?? 0 }} laporan/hari</p>
+                    </div>
+                    <a href="{{ route('analisis.index') }}" class="text-xs font-semibold text-brand-600 hover:text-brand-500">Analisis lengkap</a>
+                </div>
+                <div class="px-4 py-4 sm:px-5">
+                    @include('partials.analytics.trend', ['daily' => $analytics['daily'] ?? []])
                 </div>
             </div>
-            <div class="px-5 py-5">
-                @if (empty($blokStats['bloks']))
-                    <p class="text-sm text-slate-500">Belum ada laporan yang tercatat per blok.</p>
-                @else
-                    @php($blokMax = (int) ($blokStats['bloks'][0]['total'] ?? 0))
-                    <div class="space-y-3">
-                        @foreach ($blokStats['bloks'] as $blokItem)
-                            <div>
-                                <div class="flex items-center justify-between gap-2 text-sm">
-                                    <span class="font-medium text-slate-700">Blok {{ $blokItem['blok'] }}</span>
-                                    <span class="text-slate-500">{{ $blokItem['total'] }} laporan</span>
-                                </div>
-                                <div class="mt-1.5 h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-                                    <div class="h-2.5 rounded-full bg-brand-500" style="width: {{ $blokMax > 0 ? min(100, (($blokItem['total'] / $blokMax) * 100)) : 0 }}%"></div>
-                                </div>
-                            </div>
-                        @endforeach
+
+            <div class="card overflow-hidden">
+                <div class="flex items-center justify-between border-b border-brand-50 px-5 py-4">
+                    <div>
+                        <h3 class="font-semibold text-slate-900">Laporan per Blok</h3>
+                        <p class="mt-1 text-xs text-slate-500">Jumlah laporan kejadian per blok.</p>
                     </div>
-                @endif
+                </div>
+                <div class="px-5 py-5">
+                    @php($blokRows = array_map(static fn (array $row): array => ['label' => 'Blok '.$row['blok'], 'total' => (int) $row['total']], $blokStats['bloks'] ?? []))
+                    @include('partials.analytics.bars', [
+                        'items' => $blokRows,
+                        'empty' => 'Belum ada laporan yang tercatat per blok.',
+                    ])
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($role === 'rt' && ! empty($perluTindak))
+        <div class="mt-6 card overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brand-50 px-5 py-4">
+                <div>
+                    <h3 class="font-semibold text-slate-900">Perlu Ditindak</h3>
+                    <p class="mt-1 text-xs text-slate-500">Laporan baru di blok {{ session('firebase.blok') ?: '-' }} yang menunggu respons.</p>
+                </div>
+                <a href="{{ route('admin.laporan.index', ['status' => 'baru']) }}" class="text-xs font-semibold text-brand-600 hover:text-brand-500">Lihat semua</a>
+            </div>
+            <div class="divide-y divide-brand-50">
+                @foreach ($perluTindak as $item)
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-medium text-slate-800">{{ $item['judul'] }}</p>
+                            <p class="mt-0.5 text-xs text-slate-500">{{ $item['kategori'] }} &middot; @include('partials.tanggal', ['waktu' => $item['created_at']])</p>
+                        </div>
+                        <div class="flex shrink-0 items-center gap-2">
+                            <a href="{{ route('admin.laporan.show', $item['id']) }}" class="btn-ghost px-3 py-1.5 text-xs">Tinjau</a>
+                            <form method="POST" action="{{ route('admin.laporan.status', $item['id']) }}">
+                                @csrf
+                                <input type="hidden" name="status" value="diproses">
+                                <button type="submit" class="btn-primary px-3 py-1.5 text-xs">Proses</button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    @if (! $isStaff)
+        <div class="mt-6 card overflow-hidden">
+            <div class="border-b border-brand-50 px-5 py-4">
+                <h3 class="font-semibold text-slate-900">Progres Laporan Saya</h3>
+                <p class="mt-1 text-xs text-slate-500">Pantau perkembangan laporan yang Anda kirim.</p>
+            </div>
+            <div class="px-5 py-5">
+                @include('partials.analytics.status', [
+                    'byStatus' => $summary['by_status'] ?? [],
+                    'total' => $summary['total'] ?? 0,
+                    'statusLabels' => $statusLabels,
+                ])
             </div>
         </div>
     @endif
@@ -166,14 +251,40 @@
                    class="text-xs font-semibold text-brand-600 hover:text-brand-500">Lihat semua</a>
             </div>
 
-            <div class="divide-y divide-brand-50">
-                @foreach ($pengumuman as $item)
-                    <a href="{{ route('pengumuman.show', $item['id']) }}" class="block px-5 py-3.5 transition hover:bg-brand-50/40">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <p class="truncate text-sm font-medium text-slate-800">{{ $item['judul'] }}</p>
-                            <p class="shrink-0 text-xs text-slate-400">@include('partials.tanggal', ['waktu' => $item['created_at']])</p>
+            @php($featured = $pengumuman[0] ?? null)
+            @if ($featured)
+                <a href="{{ route('pengumuman.show', $featured['id']) }}" class="block transition hover:bg-brand-50/40">
+                    <div class="grid sm:grid-cols-5">
+                        @if (! empty($featured['gambar']['url']))
+                            <div class="sm:col-span-2">
+                                <img src="{{ $featured['gambar']['url'] }}" alt="" class="h-48 w-full object-cover sm:h-full" loading="lazy">
+                            </div>
+                        @endif
+                        <div class="{{ ! empty($featured['gambar']['url']) ? 'sm:col-span-3' : 'sm:col-span-5' }} p-5">
+                            <span class="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 ring-1 ring-inset ring-amber-200">Pengumuman terbaru</span>
+                            <p class="mt-2 text-base font-semibold text-slate-900">{{ $featured['judul'] }}</p>
+                            <p class="mt-1 line-clamp-3 text-sm text-slate-600">{{ $featured['isi'] }}</p>
+                            <p class="mt-3 text-xs text-slate-400">@include('partials.tanggal', ['waktu' => $featured['created_at']])</p>
                         </div>
-                        <p class="mt-0.5 line-clamp-1 text-xs text-slate-500">{{ $item['isi'] }}</p>
+                    </div>
+                </a>
+            @endif
+
+            <div class="divide-y divide-brand-50">
+                @foreach (array_slice($pengumuman, 1) as $item)
+                    <a href="{{ route('pengumuman.show', $item['id']) }}" class="block px-5 py-3.5 transition hover:bg-brand-50/40">
+                        <div class="flex items-center gap-3">
+                            @if (! empty($item['gambar']['url']))
+                                <img src="{{ $item['gambar']['url'] }}" alt="" class="h-11 w-14 shrink-0 rounded-lg border border-brand-100 object-cover" loading="lazy">
+                            @endif
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <p class="truncate text-sm font-medium text-slate-800">{{ $item['judul'] }}</p>
+                                    <p class="shrink-0 text-xs text-slate-400">@include('partials.tanggal', ['waktu' => $item['created_at']])</p>
+                                </div>
+                                <p class="mt-0.5 line-clamp-1 text-xs text-slate-500">{{ $item['isi'] }}</p>
+                            </div>
+                        </div>
                     </a>
                 @endforeach
             </div>

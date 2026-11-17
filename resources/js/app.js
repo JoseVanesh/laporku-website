@@ -1,8 +1,10 @@
+import { initAnnouncementCover } from './announcement-upload';
 import { initAuthForms } from './auth';
 import { initDashboardMap, initLocationPicker, initPointMap } from './map';
 import { initLanding } from './landing';
 
 initAuthForms();
+initAnnouncementCover();
 
 if (document.querySelector('[data-landing-nav]')) {
     initLanding();

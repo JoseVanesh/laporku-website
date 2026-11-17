@@ -4,6 +4,37 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Peran Pengguna
+    |--------------------------------------------------------------------------
+    |
+    | Label peran dipakai di navigasi, badge komentar, dan form pengguna.
+    |
+    */
+
+    'roles' => [
+        'warga' => 'Warga',
+        'rt' => 'RT',
+        'rw' => 'RW',
+        'super_admin' => 'Super Admin',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Awal
+    |--------------------------------------------------------------------------
+    |
+    | Daftar email (dipisah koma) yang otomatis diangkat menjadi super admin
+    | ketika login. Set lewat LAPORKU_SUPER_ADMIN_EMAILS di .env / Vercel.
+    |
+    */
+
+    'super_admins' => array_values(array_filter(array_map(
+        static fn (string $email): string => mb_strtolower(trim($email)),
+        explode(',', (string) env('LAPORKU_SUPER_ADMIN_EMAILS', '')),
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Disk Penyimpanan Media Laporan
     |--------------------------------------------------------------------------
     |

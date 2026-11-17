@@ -14,6 +14,10 @@ class EnsureRole
     {
         $role = $request->session()->get('firebase.role');
 
+        if ($role === 'super_admin') {
+            return $next($request);
+        }
+
         if (! $role || ! in_array($role, $roles, true)) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
         }

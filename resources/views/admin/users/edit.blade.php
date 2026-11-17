@@ -36,7 +36,7 @@
                         <option value="{{ $kode }}" @selected(old('role', $user['role'] ?? 'warga') === $kode)>{{ $label }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-xs text-slate-500">Warga hanya membuat laporan. RT menangani laporan di bloknya. RW mengelola semuanya.</p>
+                <p class="mt-1 text-xs text-slate-500">Warga membuat laporan. RT menangani laporan di bloknya. RW mengelola pengguna dan pengumuman. Super Admin dapat mengatur semua peran dan blok.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">

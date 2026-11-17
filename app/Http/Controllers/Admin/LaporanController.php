@@ -31,7 +31,8 @@ class LaporanController extends Controller
         $filters = [];
 
         if ($role === 'rt') {
-            $filters['blok'] = session('firebase.blok', '');
+            $blok = (string) session('firebase.blok', '');
+            $filters['blok'] = $blok !== '' ? $blok : ReportStore::EMPTY_SCOPE;
         } elseif ($blokInput !== '') {
             $filters['blok'] = $blokInput;
         }

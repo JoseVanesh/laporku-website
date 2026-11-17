@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Firestore\AnnouncementStore;
 use App\Services\Firestore\ReportStore;
+use App\Services\Firestore\UserStore;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -18,17 +19,28 @@ class DashboardController extends Controller
     public function index()
     {
         $role = (string) session('firebase.role');
-        $isStaff = in_array($role, ['rw', 'rt'], true);
+        $isStaff = in_array($role, ['rw', 'rt', 'super_admin'], true);
+
+        $blok = (string) session('firebase.blok', '');
 
         $scopeFilters = $isStaff
-            ? ($role === 'rt' ? ['blok' => (string) session('firebase.blok', '')] : [])
+            ? ($role === 'rt' ? ['blok' => $blok !== '' ? $blok : ReportStore::EMPTY_SCOPE] : [])
             : ['uid_penulis' => (string) session('firebase.uid')];
 
         $blokStats = $isStaff ? $this->reports->blokSummary($scopeFilters) : ['bloks' => [], 'total' => 0];
+        $analytics = $isStaff ? $this->reports->analytics($scopeFilters, 7) : null;
+        $perluTindak = $role === 'rt'
+            ? $this->reports->paginate($scopeFilters + ['status' => 'baru'], 5, 0)['items']
+            : [];
+        $superAdminSummary = $role === 'super_admin' ? app(UserStore::class)->summary() : null;
 
         return view('dashboard.index', [
             'role' => $role,
             'isStaff' => $isStaff,
+            'isSuperAdmin' => $role === 'super_admin',
+            'superAdminSummary' => $superAdminSummary,
+            'analytics' => $analytics,
+            'perluTindak' => $perluTindak,
             'summary' => $this->reports->summary($scopeFilters),
             'latest' => $this->reports->paginate($scopeFilters, 5, 0)['items'],
             'pengumuman' => $this->announcements->latest(3),
@@ -46,12 +58,13 @@ class DashboardController extends Controller
     public function points(Request $request)
     {
         $role = (string) session('firebase.role');
-        $isStaff = in_array($role, ['rw', 'rt'], true);
+        $isStaff = in_array($role, ['rw', 'rt', 'super_admin'], true);
 
         $filters = [];
 
         if ($role === 'rt') {
-            $filters['blok'] = (string) session('firebase.blok', '');
+            $blok = (string) session('firebase.blok', '');
+            $filters['blok'] = $blok !== '' ? $blok : ReportStore::EMPTY_SCOPE;
         }
 
         $status = $request->string('status')->toString();

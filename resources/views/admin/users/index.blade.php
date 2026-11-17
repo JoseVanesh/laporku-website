@@ -54,7 +54,11 @@
                                     <span class="rounded-full bg-mist-100 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-100">{{ $roles[$user['role'] ?? 'warga'] ?? '-' }}</span>
                                 </td>
                                 <td class="px-4 py-3 text-right">
-                                    @if (($user['uid'] ?? null) !== session('firebase.uid'))
+                                    @php
+                                        $canEdit = ($user['uid'] ?? null) !== session('firebase.uid')
+                                            && (($user['role'] ?? 'warga') !== 'super_admin' || session('firebase.role') === 'super_admin');
+                                    @endphp
+                                    @if ($canEdit)
                                         <a href="{{ route('admin.users.edit', $user['uid']) }}"
                                            class="rounded-xl border border-brand-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-brand-50 hover:text-brand-700">Ubah</a>
                                     @endif

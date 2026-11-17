@@ -195,7 +195,7 @@ class LaporanController extends Controller
     {
         $role = session('firebase.role');
         $isOwner = ($laporan['uid_penulis'] ?? null) === session('firebase.uid');
-        $isStaff = in_array($role, ['rw', 'rt'], true);
+        $isStaff = in_array($role, ['rw', 'rt', 'super_admin'], true);
         $isSameBlock = ($laporan['blok'] ?? '') === session('firebase.blok');
         $isRtScoped = $role !== 'rt' || $isSameBlock;
 

@@ -57,7 +57,7 @@
                                         @if (! empty($k['sistem']))
                                             <span class="ml-1 rounded bg-brand-100 px-1.5 py-0.5 font-medium text-brand-700">Update Status</span>
                                         @else
-                                            <span class="ml-1 rounded bg-slate-200 px-1.5 py-0.5 font-medium text-slate-600">{{ ['warga' => 'Warga', 'rt' => 'RT', 'rw' => 'RW', 'admin' => 'RW'][$k['peran'] ?? 'warga'] ?? '-' }}</span>
+                                            <span class="ml-1 rounded bg-slate-200 px-1.5 py-0.5 font-medium text-slate-600">{{ config('laporku.roles.'.($k['peran'] ?? 'warga'), '-') }}</span>
                                         @endif
                                     </span>
                                     <span class="text-slate-400">@include('partials.tanggal', ['waktu' => $k['created_at']])</span>

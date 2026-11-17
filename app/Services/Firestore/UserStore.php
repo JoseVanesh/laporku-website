@@ -88,6 +88,46 @@ class UserStore
     }
 
     /**
+     * Ringkasan jumlah pengguna per peran dan daftar blok aktif.
+     *
+     * @return array{total: int, by_role: array<string, int>, blocks: array<int, string>}
+     */
+    public function summary(int $limit = 500): array
+    {
+        $documents = $this->collection()
+            ->orderBy('created_at', Query::DIR_DESCENDING)
+            ->limit($limit)
+            ->documents();
+
+        $total = 0;
+        $byRole = [];
+        $blocks = [];
+
+        foreach ($documents as $snapshot) {
+            if (! $snapshot->exists()) {
+                continue;
+            }
+
+            $data = $snapshot->data();
+            $total++;
+
+            $role = (string) ($data['role'] ?? 'warga');
+            $byRole[$role] = ($byRole[$role] ?? 0) + 1;
+
+            $blok = trim((string) ($data['blok'] ?? ''));
+
+            if ($blok !== '') {
+                $blocks[$blok] = true;
+            }
+        }
+
+        $blockList = array_keys($blocks);
+        sort($blockList, SORT_NATURAL | SORT_FLAG_CASE);
+
+        return ['total' => $total, 'by_role' => $byRole, 'blocks' => $blockList];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function collection(): CollectionReference

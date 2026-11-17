@@ -17,12 +17,17 @@
     @else
         <div class="space-y-3">
             @foreach ($pengumuman as $item)
-                <a href="{{ route('pengumuman.show', $item['id']) }}" class="card block p-5 transition hover:border-brand-300 hover:shadow-soft">
+                <a href="{{ route('pengumuman.show', $item['id']) }}" class="card block overflow-hidden p-5 transition hover:border-brand-300 hover:shadow-soft">
                     <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <h2 class="truncate font-semibold text-slate-900">{{ $item['judul'] }}</h2>
-                            <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $item['isi'] }}</p>
-                            <p class="mt-2 text-xs text-slate-500">Oleh {{ $item['penulis_nama'] ?? 'Pengurus' }}</p>
+                        <div class="flex min-w-0 flex-1 items-start gap-3">
+                            @if (! empty($item['gambar']['url']))
+                                <img src="{{ $item['gambar']['url'] }}" alt="" class="h-20 w-24 shrink-0 rounded-xl border border-brand-100 object-cover" loading="lazy">
+                            @endif
+                            <div class="min-w-0">
+                                <h2 class="truncate font-semibold text-slate-900">{{ $item['judul'] }}</h2>
+                                <p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ $item['isi'] }}</p>
+                                <p class="mt-2 text-xs text-slate-500">Oleh {{ $item['penulis_nama'] ?? 'Pengurus' }}</p>
+                            </div>
                         </div>
                         <div class="shrink-0 text-right text-xs text-slate-500">
                             <p>@include('partials.tanggal', ['waktu' => $item['created_at']])</p>

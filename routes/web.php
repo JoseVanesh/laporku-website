@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\KategoriController as AdminKategoriController;
 use App\Http\Controllers\Admin\LaporanController as AdminLaporanController;
 use App\Http\Controllers\Admin\PengumumanController as AdminPengumumanController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LaporanController;
@@ -37,6 +38,10 @@ Route::middleware('auth.firebase')->group(function () {
 
     Route::get('/pengumuman', [PengumumanController::class, 'index'])->name('pengumuman.index');
     Route::get('/pengumuman/{id}', [PengumumanController::class, 'show'])->name('pengumuman.show');
+
+    Route::get('/analisis', [AnalyticsController::class, 'index'])
+        ->middleware('role:rt,rw')
+        ->name('analisis.index');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::middleware('role:rw,rt')->group(function () {

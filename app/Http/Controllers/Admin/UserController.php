@@ -10,16 +10,15 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    public const ROLES = ['warga' => 'Warga', 'rt' => 'RT', 'rw' => 'RW'];
-
     public function __construct(private readonly UserStore $users) {}
 
     public function index(Request $request)
     {
         $page = max(1, (int) $request->input('page', 1));
         $role = $request->string('role')->toString();
+        $roles = $this->roles();
 
-        $filters = in_array($role, array_keys(self::ROLES), true) ? ['role' => $role] : [];
+        $filters = in_array($role, array_keys($roles), true) ? ['role' => $role] : [];
 
         $result = $this->users->paginate($filters, 20, ($page - 1) * 20);
 
@@ -28,7 +27,7 @@ class UserController extends Controller
             'hasMore' => $result['has_more'],
             'page' => $page,
             'roleAktif' => $filters['role'] ?? null,
-            'roles' => self::ROLES,
+            'roles' => $roles,
         ]);
     }
 
@@ -38,9 +37,11 @@ class UserController extends Controller
 
         abort_if($user === null, 404);
 
+        $this->authorizeManage($user);
+
         return view('admin.users.edit', [
             'user' => $user,
-            'roles' => self::ROLES,
+            'roles' => $this->assignableRoles(),
         ]);
     }
 
@@ -52,10 +53,14 @@ class UserController extends Controller
 
         abort_if($user === null, 404);
 
+        $this->authorizeManage($user);
+
+        $roles = $this->assignableRoles();
+
         $validated = $request->validate([
             'nama' => 'required|string|min:3|max:100',
             'telepon' => 'required|string|min:9|max:20',
-            'role' => 'required|in:'.implode(',', array_keys(self::ROLES)),
+            'role' => 'required|in:'.implode(',', array_keys($roles)),
             'blok' => 'nullable|string|max:20',
             'rumah' => 'nullable|string|max:20',
         ], [
@@ -79,5 +84,43 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Data pengguna "'.$validated['nama'].'" diperbarui. Pengguna perlu login ulang agar peran barunya berlaku.');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function roles(): array
+    {
+        return (array) config('laporku.roles', [
+            'warga' => 'Warga',
+            'rt' => 'RT',
+            'rw' => 'RW',
+        ]);
+    }
+
+    /**
+     * RW tidak boleh mengangkat atau mengubah super admin.
+     *
+     * @return array<string, string>
+     */
+    private function assignableRoles(): array
+    {
+        $roles = $this->roles();
+
+        if (session('firebase.role') !== 'super_admin') {
+            unset($roles['super_admin']);
+        }
+
+        return $roles;
+    }
+
+    /**
+     * @param  array<string, mixed>  $user
+     */
+    private function authorizeManage(array $user): void
+    {
+        if (($user['role'] ?? 'warga') === 'super_admin' && session('firebase.role') !== 'super_admin') {
+            abort(403, 'Hanya super admin yang dapat mengelola akun super admin.');
+        }
     }
 }

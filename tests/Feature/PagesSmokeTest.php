@@ -55,6 +55,7 @@ class PagesSmokeTest extends TestCase
             '/admin/kategori',
             '/admin/pengumuman',
             '/pengumuman',
+            '/analisis',
         ];
 
         foreach ($paths as $path) {
@@ -77,7 +78,7 @@ class PagesSmokeTest extends TestCase
     {
         $session = ['firebase.role' => 'rt'] + $this->sessionData;
 
-        foreach (['/dashboard', '/admin/laporan', '/admin/laporan?blok=A', '/pengumuman'] as $path) {
+        foreach (['/dashboard', '/admin/laporan', '/admin/laporan?blok=A', '/pengumuman', '/analisis'] as $path) {
             $this->withSession($session)->get($path)->assertOk();
         }
     }

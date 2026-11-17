@@ -20,6 +20,11 @@
                 @endif
             </div>
 
+            @if (! empty($item['gambar']['url']))
+                <img src="{{ $item['gambar']['url'] }}" alt="Gambar pengumuman {{ $item['judul'] }}"
+                     class="mt-5 w-full rounded-2xl border border-brand-100 object-cover">
+            @endif
+
             <p class="mt-4 whitespace-pre-line leading-relaxed text-slate-700">{{ $item['isi'] }}</p>
         </div>
     </div>

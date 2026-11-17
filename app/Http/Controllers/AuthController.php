@@ -59,10 +59,12 @@ class AuthController extends Controller
                     'nama' => (string) ($claims->claims()->get('name') ?: explode('@', $email)[0]),
                     'email' => $email,
                     'telepon' => '',
-                    'role' => 'warga',
+                    'role' => $this->defaultRole($email),
                     'blok' => '',
                     'rumah' => '',
                 ]);
+            } else {
+                $user = $this->applySuperAdminRole($users, $user, $email);
             }
 
             $this->startSession($user);
@@ -112,7 +114,7 @@ class AuthController extends Controller
                 'telepon' => $validated['telepon'],
                 'blok' => $validated['blok'],
                 'rumah' => $validated['rumah'] ?? '',
-                'role' => $existing['role'] ?? 'warga',
+                'role' => $this->isSuperAdminEmail($email) ? 'super_admin' : ($existing['role'] ?? 'warga'),
             ]);
 
             $user = $users->find($uid) ?? $user;
@@ -138,6 +140,39 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login')->with('success', 'Anda telah keluar dari akun.');
+    }
+
+    private function defaultRole(string $email): string
+    {
+        return $this->isSuperAdminEmail($email) ? 'super_admin' : 'warga';
+    }
+
+    private function isSuperAdminEmail(string $email): bool
+    {
+        $normalized = mb_strtolower(trim($email));
+
+        if ($normalized === '') {
+            return false;
+        }
+
+        return in_array($normalized, (array) config('laporku.super_admins', []), true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $user
+     * @return array<string, mixed>
+     */
+    private function applySuperAdminRole(UserStore $users, array $user, string $email): array
+    {
+        if (! $this->isSuperAdminEmail($email) || ($user['role'] ?? '') === 'super_admin') {
+            return $user;
+        }
+
+        $users->update((string) $user['uid'], ['role' => 'super_admin']);
+
+        $user['role'] = 'super_admin';
+
+        return $user;
     }
 
     private function verifyToken(string $idToken): mixed
