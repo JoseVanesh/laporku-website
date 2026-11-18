@@ -23,6 +23,12 @@ Route::get('/', function (Request $request) {
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+Route::post('/register/otp/send', [AuthController::class, 'sendRegisterOtp'])
+    ->middleware('throttle:10,1')
+    ->name('register.otp.send');
+Route::post('/register/otp/verify', [AuthController::class, 'verifyRegisterOtp'])
+    ->middleware('throttle:20,1')
+    ->name('register.otp.verify');
 Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth.firebase')->name('logout');
 
@@ -49,10 +55,11 @@ Route::middleware('auth.firebase')->group(function () {
             Route::get('/laporan/{id}', [AdminLaporanController::class, 'show'])->name('laporan.show');
             Route::post('/laporan/{id}/status', [AdminLaporanController::class, 'updateStatus'])->name('laporan.status');
             Route::post('/laporan/{id}/komentar', [AdminLaporanController::class, 'comment'])->name('laporan.comment');
+
+            Route::get('/pengguna', [AdminUserController::class, 'index'])->name('users.index');
         });
 
         Route::middleware('role:rw')->group(function () {
-            Route::get('/pengguna', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/pengguna/{uid}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
             Route::put('/pengguna/{uid}', [AdminUserController::class, 'update'])->name('users.update');
 

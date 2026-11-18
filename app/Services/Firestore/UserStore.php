@@ -53,7 +53,7 @@ class UserStore
     }
 
     /**
-     * @param  array{role?: string}  $filters
+     * @param  array{role?: string, search?: string}  $filters
      * @return array{items: array<int, array<string, mixed>>, has_more: bool}
      */
     public function paginate(array $filters = [], int $perPage = 20, int $offset = 0): array
@@ -62,6 +62,39 @@ class UserStore
 
         if (! empty($filters['role'])) {
             $query = $query->where('role', '=', $filters['role']);
+        }
+
+        $search = trim((string) ($filters['search'] ?? ''));
+
+        if ($search !== '') {
+            $documents = $query
+                ->orderBy('created_at', Query::DIR_DESCENDING)
+                ->limit(500)
+                ->documents();
+
+            $needle = mb_strtolower($search);
+            $matches = [];
+
+            foreach ($documents as $snapshot) {
+                if (! $snapshot->exists()) {
+                    continue;
+                }
+
+                $item = ['uid' => $snapshot->id()] + $snapshot->data();
+
+                if ($this->matchesSearch($item, $needle)) {
+                    $matches[] = $item;
+                }
+            }
+
+            $items = array_slice($matches, $offset, $perPage + 1);
+            $hasMore = count($items) > $perPage;
+
+            if ($hasMore) {
+                array_pop($items);
+            }
+
+            return ['items' => $items, 'has_more' => $hasMore];
         }
 
         $documents = $query
@@ -85,6 +118,35 @@ class UserStore
         }
 
         return ['items' => $items, 'has_more' => $hasMore];
+    }
+
+    /**
+     * @param  array<string, mixed>  $user
+     */
+    private function matchesSearch(array $user, string $needle): bool
+    {
+        $blocks = array_filter(array_map(
+            static fn (mixed $block): string => trim((string) $block),
+            (array) ($user['bloks'] ?? []),
+        ));
+
+        $haystacks = [
+            (string) ($user['nama'] ?? ''),
+            (string) ($user['email'] ?? ''),
+            (string) ($user['telepon'] ?? ''),
+            (string) ($user['blok'] ?? ''),
+            (string) ($user['rumah'] ?? ''),
+            (string) ($user['uid'] ?? ''),
+            implode(' ', $blocks),
+        ];
+
+        foreach ($haystacks as $value) {
+            if ($value !== '' && str_contains(mb_strtolower($value), $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

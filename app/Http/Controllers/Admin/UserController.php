@@ -16,9 +16,14 @@ class UserController extends Controller
     {
         $page = max(1, (int) $request->input('page', 1));
         $role = $request->string('role')->toString();
+        $search = trim($request->string('q')->toString());
         $roles = $this->roles();
 
         $filters = in_array($role, array_keys($roles), true) ? ['role' => $role] : [];
+
+        if ($search !== '') {
+            $filters['search'] = $search;
+        }
 
         $result = $this->users->paginate($filters, 20, ($page - 1) * 20);
 
@@ -28,6 +33,7 @@ class UserController extends Controller
             'page' => $page,
             'roleAktif' => $filters['role'] ?? null,
             'roles' => $roles,
+            'search' => $search,
         ]);
     }
 

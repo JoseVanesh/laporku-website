@@ -4,24 +4,54 @@
 @section('subtitle', 'Kelola peran warga, RT, dan RW')
 
 @section('content')
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <p class="text-sm text-slate-500">Perubahan peran berlaku setelah pengguna login ulang.</p>
+    <div class="mb-6 space-y-4">
+        <form method="GET" action="{{ route('admin.users.index') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div class="flex-1">
+                <label for="q" class="block text-sm font-medium text-slate-700">Cari pengguna</label>
+                <input type="search" id="q" name="q" value="{{ $search }}" placeholder="Nama, email, telepon, blok, atau rumah"
+                       class="field mt-1.5">
+            </div>
+            @if ($roleAktif)
+                <input type="hidden" name="role" value="{{ $roleAktif }}">
+            @endif
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary">Cari</button>
+                @if ($search !== '' || $roleAktif)
+                    <a href="{{ route('admin.users.index') }}" class="btn-ghost">Reset</a>
+                @endif
+            </div>
+        </form>
 
-        <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.users.index') }}"
-               class="chip-toggle {{ $roleAktif === null ? 'is-active' : '' }}">Semua</a>
-            @foreach ($roles as $kode => $label)
-                <a href="{{ route('admin.users.index', ['role' => $kode]) }}"
-                   class="chip-toggle {{ $roleAktif === $kode ? 'is-active' : '' }}">
-                    {{ $label }}
-                </a>
-            @endforeach
+        <div class="flex flex-wrap items-end justify-between gap-4">
+            <p class="text-sm text-slate-500">
+                @if ($search !== '')
+                    Hasil pencarian untuk "<span class="font-medium text-slate-700">{{ $search }}</span>".
+                @else
+                    Perubahan peran berlaku setelah pengguna login ulang.
+                @endif
+            </p>
+
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.users.index', array_filter(['q' => $search ?: null])) }}"
+                   class="chip-toggle {{ $roleAktif === null ? 'is-active' : '' }}">Semua</a>
+                @foreach ($roles as $kode => $label)
+                    <a href="{{ route('admin.users.index', array_filter(['role' => $kode, 'q' => $search ?: null])) }}"
+                       class="chip-toggle {{ $roleAktif === $kode ? 'is-active' : '' }}">
+                        {{ $label }}
+                    </a>
+                @endforeach
+            </div>
         </div>
     </div>
 
     @if (empty($users))
         <div class="card border-dashed p-10 text-center">
-            <p class="font-medium text-slate-700">Belum ada pengguna pada filter ini.</p>
+            @if ($search !== '' || $roleAktif)
+                <p class="font-medium text-slate-700">Tidak ada pengguna yang cocok dengan pencarian/filter ini.</p>
+                <p class="mt-1 text-sm text-slate-500">Coba kata kunci lain atau reset filter.</p>
+            @else
+                <p class="font-medium text-slate-700">Belum ada pengguna.</p>
+            @endif
         </div>
     @else
         <div class="card overflow-hidden">
@@ -83,7 +113,7 @@
 
         <nav class="mt-8 flex items-center justify-between text-sm">
             @if ($page > 1)
-                <a href="{{ route('admin.users.index', array_filter(['role' => $roleAktif, 'page' => $page - 1])) }}" class="btn-ghost">&larr; Sebelumnya</a>
+                <a href="{{ route('admin.users.index', array_filter(['role' => $roleAktif, 'q' => $search ?: null, 'page' => $page - 1])) }}" class="btn-ghost">&larr; Sebelumnya</a>
             @else
                 <span></span>
             @endif
@@ -91,7 +121,7 @@
             <span class="text-slate-500">Halaman {{ $page }}</span>
 
             @if ($hasMore)
-                <a href="{{ route('admin.users.index', array_filter(['role' => $roleAktif, 'page' => $page + 1])) }}" class="btn-ghost">Berikutnya &rarr;</a>
+                <a href="{{ route('admin.users.index', array_filter(['role' => $roleAktif, 'q' => $search ?: null, 'page' => $page + 1])) }}" class="btn-ghost">Berikutnya &rarr;</a>
             @else
                 <span></span>
             @endif
