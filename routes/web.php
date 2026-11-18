@@ -62,6 +62,7 @@ Route::middleware('auth.firebase')->group(function () {
         Route::middleware('role:rw')->group(function () {
             Route::get('/pengguna/{uid}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
             Route::put('/pengguna/{uid}', [AdminUserController::class, 'update'])->name('users.update');
+            Route::delete('/pengguna/{uid}', [AdminUserController::class, 'destroy'])->name('users.destroy');
 
             Route::get('/kategori', [AdminKategoriController::class, 'index'])->name('kategori.index');
             Route::post('/kategori', [AdminKategoriController::class, 'store'])->name('kategori.store');

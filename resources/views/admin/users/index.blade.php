@@ -94,14 +94,32 @@
                                 <td class="px-4 py-3">
                                     <span class="rounded-full bg-mist-100 px-2.5 py-1 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-100">{{ $roles[$user['role'] ?? 'warga'] ?? '-' }}</span>
                                 </td>
-                                <td class="px-4 py-3 text-right">
+                                <td class="px-4 py-3">
                                     @php
-                                        $canEdit = ($user['uid'] ?? null) !== session('firebase.uid')
-                                            && (($user['role'] ?? 'warga') !== 'super_admin' || session('firebase.role') === 'super_admin');
+                                        $isSelf = ($user['uid'] ?? null) === session('firebase.uid');
+                                        $isTargetSuper = ($user['role'] ?? 'warga') === 'super_admin';
+                                        $canManage = in_array(session('firebase.role'), ['rw', 'super_admin'], true);
+                                        $canEdit = $canManage && ! $isSelf && (! $isTargetSuper || session('firebase.role') === 'super_admin');
+                                        $canDelete = session('firebase.role') === 'super_admin' && ! $isSelf && ! $isTargetSuper;
                                     @endphp
-                                    @if ($canEdit)
-                                        <a href="{{ route('admin.users.edit', $user['uid']) }}"
-                                           class="rounded-xl border border-brand-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-brand-50 hover:text-brand-700">Ubah</a>
+                                    @if ($canEdit || $canDelete)
+                                        <div class="flex justify-end gap-2">
+                                            @if ($canEdit)
+                                                <a href="{{ route('admin.users.edit', $user['uid']) }}"
+                                                   class="rounded-xl border border-brand-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-brand-50 hover:text-brand-700">Ubah</a>
+                                            @endif
+                                            @if ($canDelete)
+                                                <form method="POST" action="{{ route('admin.users.destroy', $user['uid']) }}"
+                                                      onsubmit="return confirm('Hapus pengguna &quot;{{ $user['nama'] ?? 'tanpa nama' }}&quot;? Tindakan ini tidak dapat dibatalkan.')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit"
+                                                            class="rounded-xl border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-50">
+                                                        Hapus
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        </div>
                                     @endif
                                 </td>
                             </tr>

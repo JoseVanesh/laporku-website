@@ -7,6 +7,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\Firestore\UserStore;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Kreait\Laravel\Firebase\Facades\Firebase;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -117,6 +120,52 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'Data pengguna "'.$validated['nama'].'" diperbarui. Pengguna perlu login ulang agar peran barunya berlaku.');
+    }
+
+    public function destroy(string $uid)
+    {
+        abort_unless(session('firebase.role') === 'super_admin', 403, 'Hanya super admin yang dapat menghapus pengguna.');
+
+        abort_if($uid === session('firebase.uid'), 403, 'Anda tidak dapat menghapus akun sendiri.');
+
+        $user = $this->users->find($uid);
+
+        abort_if($user === null, 404);
+
+        if (($user['role'] ?? 'warga') === 'super_admin') {
+            abort(403, 'Akun super admin tidak dapat dihapus.');
+        }
+
+        $name = (string) ($user['nama'] ?? 'Pengguna');
+
+        try {
+            try {
+                Firebase::auth()->deleteUser($uid);
+            } catch (Throwable $e) {
+                $message = mb_strtolower($e->getMessage());
+
+                if (! str_contains($message, 'no user') && ! str_contains($message, 'user-not-found') && ! str_contains($message, 'not found')) {
+                    Log::error('Gagal menghapus akun Firebase Auth pengguna', [
+                        'uid' => $uid,
+                        'exception' => $e,
+                    ]);
+
+                    return back()->with('error', 'Gagal menghapus akun autentikasi pengguna. Silakan coba lagi.');
+                }
+            }
+
+            $this->users->delete($uid);
+        } catch (Throwable $e) {
+            Log::error('Gagal menghapus data pengguna', [
+                'uid' => $uid,
+                'exception' => $e,
+            ]);
+
+            return back()->with('error', 'Gagal menghapus pengguna. Silakan coba lagi.');
+        }
+
+        return redirect()->route('admin.users.index')
+            ->with('success', 'Pengguna "'.$name.'" berhasil dihapus.');
     }
 
     /**

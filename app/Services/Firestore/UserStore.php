@@ -52,6 +52,11 @@ class UserStore
         $this->collection()->document($uid)->set($data, ['merge' => true]);
     }
 
+    public function delete(string $uid): void
+    {
+        $this->collection()->document($uid)->delete();
+    }
+
     /**
      * @param  array{role?: string, search?: string}  $filters
      * @return array{items: array<int, array<string, mixed>>, has_more: bool}
